@@ -1,0 +1,170 @@
+{
+  "name": "deepseek-v4-qa",
+  "displayName": "DeepSeek V4 QA — Vision + Token Tracking",
+  "description": "DeepSeek V4 Pro & Flash in Copilot Chat with vision proxy, token tracking, balance estimation, reasoning cache, and session spend. Merges the best of Vizards/deepseek-v4-for-copilot (vision proxy) and Laurent00TT/deepseek-v4-vscode-chat (balance + session tracking).",
+  "icon": "resources/icon.png",
+  "version": "0.1.0",
+  "publisher": "konstantyn-ganenkov",
+  "license": "MIT",
+  "repository": {
+    "type": "git",
+    "url": "local"
+  },
+  "engines": {
+    "vscode": "^1.116.0",
+    "node": ">=24"
+  },
+  "extensionDependencies": [
+    "github.copilot-chat"
+  ],
+  "extensionKind": [
+    "workspace"
+  ],
+  "categories": [
+    "AI",
+    "Chat",
+    "Programming Languages"
+  ],
+  "keywords": [
+    "deepseek",
+    "deepseek v4",
+    "deepseek-v4",
+    "copilot",
+    "github copilot",
+    "copilot chat",
+    "vision",
+    "token tracking",
+    "balance",
+    "byok",
+    "language model",
+    "thinking",
+    "reasoning",
+    "ai",
+    "chat"
+  ],
+  "activationEvents": [
+    "onStartupFinished"
+  ],
+  "enabledApiProposals": [],
+  "main": "./out/extension.js",
+  "contributes": {
+    "languageModelChatProviders": [
+      {
+        "vendor": "deepseek-qa",
+        "displayName": "DeepSeek V4 QA"
+      }
+    ],
+    "commands": [
+      {
+        "command": "deepseek-qa.setApiKey",
+        "title": "DeepSeek QA: Set API Key"
+      },
+      {
+        "command": "deepseek-qa.getApiKey",
+        "title": "DeepSeek QA: Get API Key"
+      },
+      {
+        "command": "deepseek-qa.clearApiKey",
+        "title": "DeepSeek QA: Clear API Key"
+      },
+      {
+        "command": "deepseek-qa.setVisionModel",
+        "title": "DeepSeek QA: Set Vision Proxy Model"
+      },
+      {
+        "command": "deepseek-qa.showLogs",
+        "title": "DeepSeek QA: Show Logs"
+      },
+      {
+        "command": "deepseek-qa.refreshBalance",
+        "title": "DeepSeek QA: Refresh Balance"
+      },
+      {
+        "command": "deepseek-qa.clearSession",
+        "title": "DeepSeek QA: Clear Session Counter"
+      },
+      {
+        "command": "deepseek-qa.showCacheStats",
+        "title": "DeepSeek QA: Show Reasoning Cache Stats"
+      }
+    ],
+    "configuration": {
+      "title": "DeepSeek V4 QA",
+      "properties": {
+        "deepseek-qa.baseUrl": {
+          "type": "string",
+          "default": "https://api.deepseek.com",
+          "description": "DeepSeek API base URL."
+        },
+        "deepseek-qa.maxTokens": {
+          "type": "number",
+          "default": 0,
+          "minimum": 0,
+          "description": "Maximum output tokens per request. 0 = API default (no limit)."
+        },
+        "deepseek-qa.debug": {
+          "type": "boolean",
+          "default": false,
+          "description": "Enable diagnostic debug logging."
+        },
+        "deepseek-qa.visionModel": {
+          "type": "string",
+          "default": "",
+          "description": "Model ID for vision proxy (describes images for text-only DeepSeek). Leave empty for auto-detection. Use 'DeepSeek QA: Set Vision Proxy Model' to pick from a list."
+        },
+        "deepseek-qa.visionPrompt": {
+          "type": "string",
+          "editPresentation": "multilineText",
+          "default": "Describe the visual contents of this image in detail, including any text, objects, people, or context that would be relevant for understanding it. Focus on factual visual elements.",
+          "description": "Prompt sent to the vision proxy model when describing image attachments."
+        }
+      }
+    },
+    "walkthroughs": [
+      {
+        "id": "deepseekQaGettingStarted",
+        "title": "DeepSeek V4 QA — Setup",
+        "description": "Set up your DeepSeek API key and start using V4 models in Copilot Chat with vision + token tracking.",
+        "steps": [
+          {
+            "id": "setApiKey",
+            "title": "Set your DeepSeek API key",
+            "description": "[Get an API key](https://platform.deepseek.com/api_keys) from platform.deepseek.com.\n[Set API Key](command:deepseek-qa.setApiKey)",
+            "media": {
+              "markdown": "resources/walkthrough/set-api-key.md"
+            },
+            "completionEvents": [
+              "onCommand:deepseek-qa.setApiKey"
+            ]
+          },
+          {
+            "id": "pickModel",
+            "title": "Pick a DeepSeek V4 model",
+            "description": "Open Copilot Chat and select a DeepSeek V4 QA variant from the model picker. Four variants available: Pro/Flash × thinking/non-thinking.",
+            "media": {
+              "markdown": "resources/walkthrough/pick-model.md"
+            }
+          }
+        ]
+      }
+    ]
+  },
+  "scripts": {
+    "clean": "node -e \"require('node:fs').rmSync('out', { recursive: true, force: true, maxRetries: process.platform === 'win32' ? 10 : 0 })\"",
+    "vscode:prepublish": "npm run compile",
+    "compile": "npm run clean && tsc -p ./",
+    "watch": "npm run clean && tsc -watch -p ./",
+    "lint": "npx oxlint",
+    "format": "npx oxfmt --write src/",
+    "package": "npx @vscode/vsce package -o dist/",
+    "publish": "npx @vscode/vsce publish"
+  },
+  "devDependencies": {
+    "@types/node": "^25.6.0",
+    "@types/vscode": "^1.116.0",
+    "@vscode/vsce": "^3.9.1",
+    "oxfmt": "^0.47.0",
+    "oxlint": "^1.62.0",
+    "typescript": "^6.0.3"
+  }
+}
