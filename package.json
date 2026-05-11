@@ -51,10 +51,15 @@
     "languageModelChatProviders": [
       {
         "vendor": "deepseek-qa",
-        "displayName": "DeepSeek V4 QA"
+        "displayName": "DeepSeek V4 QA",
+        "managementCommand": "deepseek-qa.manage"
       }
     ],
     "commands": [
+      {
+        "command": "deepseek-qa.manage",
+        "title": "DeepSeek QA: Manage Provider"
+      },
       {
         "command": "deepseek-qa.setApiKey",
         "title": "DeepSeek QA: Set API Key"
@@ -102,10 +107,42 @@
           "minimum": 0,
           "description": "Maximum output tokens per request. 0 = API default (no limit)."
         },
+        "deepseek-qa.reasoningEffort": {
+          "type": "string",
+          "enum": [
+            "high",
+            "max"
+          ],
+          "enumDescriptions": [
+            "Faster responses with shorter reasoning chains.",
+            "Maximum reasoning depth; slower and uses more tokens."
+          ],
+          "default": "max",
+          "markdownDescription": "Reasoning effort for `(thinking)` model variants. Has no effect on non-thinking variants."
+        },
         "deepseek-qa.debug": {
           "type": "boolean",
           "default": false,
           "description": "Enable diagnostic debug logging."
+        },
+        "deepseek-qa.modelIdOverrides": {
+          "type": "object",
+          "default": {
+            "deepseek-v4-flash": "deepseek-v4-flash",
+            "deepseek-v4-pro": "deepseek-v4-pro"
+          },
+          "description": "Optional API model ID overrides for DeepSeek-compatible proxy endpoints.",
+          "additionalProperties": false,
+          "properties": {
+            "deepseek-v4-flash": {
+              "type": "string",
+              "description": "API model ID to use for DeepSeek V4 Flash variants."
+            },
+            "deepseek-v4-pro": {
+              "type": "string",
+              "description": "API model ID to use for DeepSeek V4 Pro variants."
+            }
+          }
         },
         "deepseek-qa.visionModel": {
           "type": "string",
@@ -140,9 +177,17 @@
           {
             "id": "pickModel",
             "title": "Pick a DeepSeek V4 model",
-            "description": "Open Copilot Chat and select a DeepSeek V4 QA variant from the model picker. Four variants available: Pro/Flash × thinking/non-thinking.",
+            "description": "Open Copilot Chat and select a DeepSeek V4 QA variant from the model picker. Four variants available: Pro/Flash × thinking/non-thinking. If they are hidden, use Manage Provider from the picker menu.",
             "media": {
               "markdown": "resources/walkthrough/pick-model.md"
+            }
+          },
+          {
+            "id": "tuneReasoningEffort",
+            "title": "Tune reasoning effort (optional)",
+            "description": "Switch between `high` and `max` for `(thinking)` variants. [Open Reasoning Effort Setting](command:workbench.action.openSettings?%22deepseek-qa.reasoningEffort%22)",
+            "media": {
+              "markdown": "resources/walkthrough/tune-effort.md"
             }
           }
         ]

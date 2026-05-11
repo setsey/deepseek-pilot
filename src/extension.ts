@@ -30,6 +30,49 @@ export function activate(context: vscode.ExtensionContext): void {
     activeProvider = provider;
 
     context.subscriptions.push(
+      vscode.commands.registerCommand('deepseek-qa.manage', async () => {
+        const picked = await vscode.window.showQuickPick(
+          [
+            { label: 'Set API Key', id: 'setApiKey' },
+            { label: 'Clear API Key', id: 'clearApiKey' },
+            { label: 'Set Vision Proxy Model', id: 'setVisionModel' },
+            { label: 'Refresh Balance', id: 'refreshBalance' },
+            { label: 'Open Extension Settings', id: 'openSettings' },
+            { label: 'Get DeepSeek API Key', id: 'getApiKey' },
+            { label: 'Show Logs', id: 'showLogs' },
+          ],
+          {
+            title: 'Manage DeepSeek QA Provider',
+            placeHolder: 'Choose an action',
+          },
+        );
+
+        switch (picked?.id) {
+          case 'setApiKey':
+            await provider.configureApiKey();
+            break;
+          case 'clearApiKey':
+            await provider.clearApiKey();
+            break;
+          case 'setVisionModel':
+            await provider.setVisionProxyModel();
+            break;
+          case 'refreshBalance':
+            await provider.refreshBalance();
+            break;
+          case 'openSettings':
+            await vscode.commands.executeCommand('workbench.action.openSettings', 'deepseek-qa');
+            break;
+          case 'getApiKey':
+            await vscode.env.openExternal(vscode.Uri.parse('https://platform.deepseek.com/api_keys'));
+            break;
+          case 'showLogs':
+            logger.show();
+            break;
+          default:
+            break;
+        }
+      }),
       vscode.commands.registerCommand('deepseek-qa.setApiKey', () =>
         provider.configureApiKey(),
       ),
@@ -91,7 +134,10 @@ async function showWelcomeIfNeeded(
   provider: DeepSeekChatProvider,
 ): Promise<void> {
   if (context.globalState.get<boolean>(WELCOME_SHOWN_KEY)) return;
-  if (await provider.hasApiKey()) return;
+  if (await provider.hasApiKey()) {
+    await context.globalState.update(WELCOME_SHOWN_KEY, true);
+    return;
+  }
 
   await vscode.commands.executeCommand('workbench.action.openWalkthrough', WALKTHROUGH_ID);
   await context.globalState.update(WELCOME_SHOWN_KEY, true);

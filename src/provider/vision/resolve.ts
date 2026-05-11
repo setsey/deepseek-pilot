@@ -1,5 +1,10 @@
 import vscode from 'vscode';
 import { getVisionModelSetting, getVisionPrompt } from '../../config';
+import {
+  IMAGE_DESCRIPTION_PREFIX,
+  IMAGE_DESCRIPTION_SUFFIX,
+  IMAGE_DESCRIPTION_UNAVAILABLE,
+} from '../../consts';
 import { logger } from '../../logger';
 
 export interface VisionResolutionResult {
@@ -45,7 +50,7 @@ function setCachedDescription(hash: string, description: string): void {
  */
 export async function resolveImageMessages(
   messages: readonly vscode.LanguageModelChatRequestMessage[],
-  getVisionModel: () => Promise<vscode.LanguageModelChatInformation | null>,
+  getVisionModel: () => Promise<vscode.LanguageModelChat | null>,
 ): Promise<VisionResolutionResult> {
   const stats: VisionDescriptionCacheStats = { cacheHits: 0, cacheMisses: 0, totalDescriptions: 0 };
   const resolved: vscode.LanguageModelChatRequestMessage[] = [];
@@ -78,11 +83,10 @@ export async function resolveImageMessages(
 
         stats.cacheMisses++;
         const description = await describeImage(part, getVisionModel);
-        if (description) {
+        if (description !== IMAGE_DESCRIPTION_UNAVAILABLE) {
           setCachedDescription(hash, description);
-          resolvedParts.push(new vscode.LanguageModelTextPart(description));
         }
-        // If description is null, drop the image part silently
+        resolvedParts.push(new vscode.LanguageModelTextPart(description));
       } else {
         resolvedParts.push(part);
       }
@@ -104,38 +108,23 @@ function hasImageParts(msg: vscode.LanguageModelChatRequestMessage): boolean {
 
 async function describeImage(
   part: vscode.LanguageModelDataPart,
-  getVisionModel: () => Promise<vscode.LanguageModelChatInformation | null>,
-): Promise<string | null> {
+  getVisionModel: () => Promise<vscode.LanguageModelChat | null>,
+): Promise<string> {
   try {
     const visionModel = await getVisionModel();
     if (!visionModel) {
-      logger.warn('No vision proxy model available — image will be dropped');
-      return null;
+      logger.warn('No vision proxy model available — using placeholder description');
+      return IMAGE_DESCRIPTION_UNAVAILABLE;
     }
 
     const prompt = getVisionPrompt();
-    const messages: vscode.LanguageModelChatRequestMessage[] = [
-      { role: vscode.LanguageModelChatMessageRole.User, content: [new vscode.LanguageModelTextPart(prompt), part], name: 'vision-proxy' },
-    ];
+    const visionMessage = vscode.LanguageModelChatMessage.User([
+      part,
+      new vscode.LanguageModelTextPart(prompt),
+    ]);
+    const tokenSource = new vscode.CancellationTokenSource();
 
-    // Use the VS Code LM API to send the vision request.
-    // The sendChatRequest API is available at runtime in VS Code 1.116+
-    // but may not be in @types/vscode. Use a type assertion.
-    const lm = vscode.lm as unknown as {
-      sendChatRequest: (
-        model: vscode.LanguageModelChatInformation,
-        messages: vscode.LanguageModelChatRequestMessage[],
-        options: Record<string, unknown>,
-        token: vscode.CancellationToken,
-      ) => Promise<{ stream: AsyncIterable<vscode.LanguageModelTextPart> }>;
-    };
-
-    const response = await lm.sendChatRequest(
-      visionModel,
-      messages,
-      {},
-      new vscode.CancellationTokenSource().token,
-    );
+    const response = await visionModel.sendRequest([visionMessage], {}, tokenSource.token);
 
     let text = '';
     for await (const chunk of response.stream) {
@@ -144,9 +133,10 @@ async function describeImage(
       }
     }
 
-    return text ? `[Image Description: ${text}]` : null;
+    tokenSource.dispose();
+    return text ? `${IMAGE_DESCRIPTION_PREFIX}${text}${IMAGE_DESCRIPTION_SUFFIX}` : IMAGE_DESCRIPTION_UNAVAILABLE;
   } catch (e) {
     logger.warn('Vision proxy failed', e);
-    return null;
+    return IMAGE_DESCRIPTION_UNAVAILABLE;
   }
 }

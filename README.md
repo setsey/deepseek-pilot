@@ -8,7 +8,8 @@ DeepSeek V4 Pro & Flash models in GitHub Copilot Chat with:
 - **Reasoning cache** — persistent across VS Code restarts
 - **4 model variants** — Pro/Flash × thinking/non-thinking
 - **Thinking effort** — high/max reasoning depth
-- **API key validation** — probes the API before saving
+- **Model discoverability** — variants stay visible in the picker even before a key is configured
+- **API key validation** — probes the configured endpoint before saving, but can still save proxy tokens
 
 Merges the best of:
 
@@ -37,6 +38,7 @@ mklink /D %USERPROFILE%\.vscode\extensions\konstantyn-ganenkov.deepseek-v4-qa-0.
 
 | Command | Palette |
 | ------- | ------- |
+| Manage Provider | `DeepSeek QA: Manage Provider` |
 | Set API Key | `DeepSeek QA: Set API Key` |
 | Clear API Key | `DeepSeek QA: Clear API Key` |
 | Set Vision Proxy Model | `DeepSeek QA: Set Vision Proxy Model` |
@@ -45,9 +47,22 @@ mklink /D %USERPROFILE%\.vscode\extensions\konstantyn-ganenkov.deepseek-v4-qa-0.
 | Show Cache Stats | `DeepSeek QA: Show Reasoning Cache Stats` |
 | Show Logs | `DeepSeek QA: Show Logs` |
 
+## Model Picker
+
+All four variants remain visible in the Copilot Chat model picker.
+
+- Thinking variants expose a per-model `Thinking Effort` control with `high` and `max`.
+- If the provider is visible but not fully configured yet, use `Manage Provider` from the picker or command palette.
+
 ## Status Bar
 
-Shows session token count and estimated cost. Tooltip shows cache-hit breakdown and platform balance (after refresh).
+Shows session token count and estimated cost. Tooltip shows cache-hit breakdown, current reasoning effort, and platform balance after refresh.
+
+## Configuration
+
+- `deepseek-qa.reasoningEffort`: default effort for `(thinking)` variants
+- `deepseek-qa.modelIdOverrides`: remap API model IDs for DeepSeek-compatible proxy endpoints
+- `deepseek-qa.baseUrl`: switch between DeepSeek and compatible gateways
 
 ## License
 

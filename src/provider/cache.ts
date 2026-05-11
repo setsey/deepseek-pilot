@@ -5,6 +5,11 @@ export interface CachedTurn {
   reasoning: string;
 }
 
+export interface AssistantTurnFingerprintInput {
+  text: string;
+  toolCalls: ReadonlyArray<{ id: string; name: string }>;
+}
+
 export interface ReasoningCacheStats {
   entryCount: number;
   maxEntries: number;
@@ -26,6 +31,7 @@ export interface ReasoningCacheStats {
 
 export class ReasoningCache {
   private buffer: CachedTurn[] = [];
+  private onChange?: () => void;
   private totalBytes = 0;
   private maxObservedEntrySize = 0;
   private maxObservedEntryFp = '';
@@ -40,6 +46,10 @@ export class ReasoningCache {
   static readonly MAX_TOTAL_BYTES = 20 * 1024 * 1024;
 
   constructor(private readonly maxSize = 512) {}
+
+  setOnChange(cb: () => void): void {
+    this.onChange = cb;
+  }
 
   set(fingerprint: string, reasoning: string): void {
     if (!reasoning || !fingerprint) return;
@@ -69,13 +79,18 @@ export class ReasoningCache {
         this.totalEvictions++;
       } else break;
     }
+
+    this.onChange?.();
   }
 
   get(fingerprint: string): string | undefined {
+    if (!fingerprint) return undefined;
     this.totalGets++;
-    const entry = this.buffer.find((e) => e.fingerprint === fingerprint);
-    if (entry) {
+    const idx = this.buffer.findIndex((e) => e.fingerprint === fingerprint);
+    if (idx >= 0) {
       this.totalHits++;
+      const entry = this.buffer.splice(idx, 1)[0]!;
+      this.buffer.push(entry);
       return entry.reasoning;
     }
     this.totalMisses++;
@@ -112,19 +127,54 @@ export class ReasoningCache {
     };
   }
 
+  serialize(): CachedTurn[] {
+    return this.buffer.map((entry) => ({ ...entry }));
+  }
+
+  restore(entries: CachedTurn[]): void {
+    const validEntries = entries.filter(
+      (entry) => entry && typeof entry.fingerprint === 'string' && typeof entry.reasoning === 'string',
+    );
+
+    this.buffer = validEntries.slice(-this.maxSize);
+    this.totalBytes = 0;
+    for (const entry of this.buffer) {
+      this.totalBytes += Buffer.byteLength(entry.reasoning, 'utf8');
+    }
+
+    while (this.totalBytes > ReasoningCache.MAX_TOTAL_BYTES && this.buffer.length > 0) {
+      const evicted = this.buffer.shift()!;
+      this.totalBytes -= Buffer.byteLength(evicted.reasoning, 'utf8');
+      this.totalEvictions++;
+    }
+  }
+
   clear(): void {
     this.buffer = [];
     this.totalBytes = 0;
+    this.onChange?.();
   }
 }
 
 export function fingerprintAssistantTurn(
-  messages: readonly { role: string; content?: string | null }[],
+  input: AssistantTurnFingerprintInput,
 ): string {
-  const hash = createHash('sha256');
-  for (const msg of messages) {
-    hash.update(msg.role);
-    hash.update(msg.content ?? '');
+  if (input.toolCalls.length > 0) {
+    const toolKeys = input.toolCalls
+      .map((toolCall) => `${toolCall.name}:${toolCall.id}`)
+      .sort()
+      .join('|');
+    return `tc:${createHash('sha256').update(toolKeys).digest('hex').slice(0, 16)}`;
   }
-  return hash.digest('hex').slice(0, 32);
+
+  const normalizedText = input.text
+    .normalize('NFKC')
+    .replace(/\s+/g, ' ')
+    .trim();
+
+  if (!normalizedText) {
+    return '';
+  }
+
+  return `tx:${createHash('sha256').update(normalizedText).digest('hex').slice(0, 16)}`;
 }

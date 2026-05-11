@@ -6,20 +6,23 @@ import { toChatInfo } from './models';
 import { prepareChatRequest } from './request';
 import { streamChatCompletion } from './stream';
 import { estimateTokenCount } from './tokens';
-import { ReasoningCache, fingerprintAssistantTurn } from './cache';
+import { ReasoningCache, type CachedTurn } from './cache';
 import { createVisionModelGetter, setVisionProxyModel } from './vision/index';
 import { BalanceTracker } from './balance';
 import type { DSUsage } from '../types';
 
+const REASONING_CACHE_STATE_KEY = 'deepseek-qa.reasoningCache';
+
 export class DeepSeekChatProvider implements vscode.LanguageModelChatProvider {
   private readonly authManager: AuthManager;
   private readonly onDidChangeEmitter = new vscode.EventEmitter<void>();
+  private readonly globalState: vscode.Memento;
   private isActive = true;
+  private persistTimer: NodeJS.Timeout | undefined;
   private reasoningCache = new ReasoningCache();
   private vision = createVisionModelGetter();
   private balanceTracker: BalanceTracker;
   private charsPerToken = 4.0;
-  private currentMessages: readonly vscode.LanguageModelChatRequestMessage[] = [];
 
   readonly onDidChangeLanguageModelChatInformation = this.onDidChangeEmitter.event;
 
@@ -28,17 +31,39 @@ export class DeepSeekChatProvider implements vscode.LanguageModelChatProvider {
     statusBar: vscode.StatusBarItem,
   ) {
     this.authManager = new AuthManager(context);
+    this.globalState = context.globalState;
     this.balanceTracker = new BalanceTracker(statusBar);
+
+    const savedCache = this.globalState.get<CachedTurn[]>(REASONING_CACHE_STATE_KEY);
+    if (Array.isArray(savedCache) && savedCache.length > 0) {
+      this.reasoningCache.restore(savedCache);
+      logger.info(`Restored ${this.reasoningCache.serialize().length} reasoning cache entries`);
+    }
+
+    this.reasoningCache.setOnChange(() => {
+      if (this.persistTimer) {
+        clearTimeout(this.persistTimer);
+      }
+
+      this.persistTimer = setTimeout(() => {
+        void this.globalState.update(REASONING_CACHE_STATE_KEY, this.reasoningCache.serialize());
+        this.persistTimer = undefined;
+      }, 200);
+    });
 
     context.subscriptions.push(
       this.onDidChangeEmitter,
       vscode.workspace.onDidChangeConfiguration((e) => {
-        if (
-          e.affectsConfiguration('deepseek-qa.apiKey') ||
-          e.affectsConfiguration('deepseek-qa.visionModel')
-        ) {
+        if (e.affectsConfiguration('deepseek-qa.visionModel')) {
           this.vision.reset();
           this.onDidChangeEmitter.fire();
+        }
+
+        if (
+          e.affectsConfiguration('deepseek-qa.reasoningEffort') ||
+          e.affectsConfiguration('deepseek-qa.baseUrl')
+        ) {
+          this.balanceTracker.refreshDisplay();
         }
       }),
       context.secrets.onDidChange((e) => {
@@ -75,6 +100,13 @@ export class DeepSeekChatProvider implements vscode.LanguageModelChatProvider {
   async prepareForDeactivate(): Promise<void> {
     this.isActive = false;
     this.onDidChangeEmitter.fire();
+
+    if (this.persistTimer) {
+      clearTimeout(this.persistTimer);
+      this.persistTimer = undefined;
+    }
+    await this.globalState.update(REASONING_CACHE_STATE_KEY, this.reasoningCache.serialize());
+
     try {
       await vscode.lm.selectChatModels({ vendor: 'deepseek-qa' });
     } catch { /* ignore */ }
@@ -120,8 +152,6 @@ export class DeepSeekChatProvider implements vscode.LanguageModelChatProvider {
     progress: vscode.Progress<vscode.LanguageModelResponsePart>,
     token: vscode.CancellationToken,
   ): Promise<void> {
-    this.currentMessages = messages;
-
     const prepared = await prepareChatRequest({
       authManager: this.authManager,
       modelInfo,
@@ -147,18 +177,6 @@ export class DeepSeekChatProvider implements vscode.LanguageModelChatProvider {
         this.charsPerToken = this.charsPerToken * 0.9 + ratio * 0.1;
       },
     });
-
-    // After streaming, cache reasoning for tool-call turns
-    if (thinking) {
-      const userMessages = messages.filter(
-        (m) => m.role === vscode.LanguageModelChatMessageRole.User,
-      );
-      const fp = fingerprintAssistantTurn(
-        userMessages.map((m) => ({ role: 'user', content: typeof m.content === 'string' ? m.content : '' })),
-      );
-      // Reasoning was gathered by the stream handler; we need to capture it.
-      // For now, the stream module handles caching internally.
-    }
   }
 
   async provideTokenCount(
@@ -171,5 +189,11 @@ export class DeepSeekChatProvider implements vscode.LanguageModelChatProvider {
 
   dispose(): void {
     this.isActive = false;
+
+    if (this.persistTimer) {
+      clearTimeout(this.persistTimer);
+      this.persistTimer = undefined;
+    }
+    void this.globalState.update(REASONING_CACHE_STATE_KEY, this.reasoningCache.serialize());
   }
 }

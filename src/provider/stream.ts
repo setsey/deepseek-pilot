@@ -21,9 +21,27 @@ export async function streamChatCompletion(params: {
 
   let fullReasoning = '';
   let fullContent = '';
-  let toolCalls: Array<{ id: string; name: string; arguments: string }> = [];
-  let lastPromptTokens = 0;
-  let lastCompletionTokens = 0;
+  let hasShownThinkingHint = false;
+  let sawInsufficientSystemResource = false;
+  const emittedToolCalls: Array<{ id: string; name: string }> = [];
+  const toolCalls: Array<{ id: string; name: string; arguments: string }> = [];
+
+  const persistReasoning = () => {
+    if (!fullReasoning) {
+      return;
+    }
+
+    const fingerprint = fingerprintAssistantTurn({
+      text: fullContent,
+      toolCalls: emittedToolCalls,
+    });
+
+    if (!fingerprint) {
+      return;
+    }
+
+    reasoningCache.set(fingerprint, fullReasoning);
+  };
 
   try {
     const response = await fetch(prepared.url, {
@@ -36,7 +54,11 @@ export async function streamChatCompletion(params: {
     if (!response.ok) {
       const errorText = await response.text().catch(() => '');
       logger.error(`API error ${response.status}: ${errorText}`);
-      progress.report(new vscode.LanguageModelTextPart(`[DeepSeek API error ${response.status}: ${errorText.slice(0, 200)}]`));
+      progress.report(
+        new vscode.LanguageModelTextPart(
+          `[DeepSeek API error ${response.status}: ${errorText.slice(0, 200)}]`,
+        ),
+      );
       return;
     }
 
@@ -61,6 +83,7 @@ export async function streamChatCompletion(params: {
       for (const line of lines) {
         const trimmed = line.trim();
         if (!trimmed || !trimmed.startsWith('data: ')) continue;
+
         const data = trimmed.slice(6);
         if (data === '[DONE]') continue;
 
@@ -73,20 +96,33 @@ export async function streamChatCompletion(params: {
         const delta = choices[0].delta as Record<string, unknown> | undefined;
         if (!delta) continue;
 
-        // Reasoning content
+        const finishReason = choices[0].finish_reason as string | undefined;
+        if (finishReason === 'insufficient_system_resource') {
+          sawInsufficientSystemResource = true;
+        }
+
         const reasoningChunk = delta.reasoning_content as string | undefined;
         if (reasoningChunk) {
           fullReasoning += reasoningChunk;
+          const ThinkingCtor = (vscode as unknown as Record<string, unknown>)
+            .LanguageModelThinkingPart as
+            | (new (value: string, id?: string, metadata?: unknown) => unknown)
+            | undefined;
+
+          if (ThinkingCtor) {
+            progress.report(new ThinkingCtor(reasoningChunk) as vscode.LanguageModelResponsePart);
+          } else if (!hasShownThinkingHint) {
+            progress.report(new vscode.LanguageModelTextPart('Thinking...\n\n'));
+            hasShownThinkingHint = true;
+          }
         }
 
-        // Regular content
         const contentChunk = delta.content as string | undefined;
         if (contentChunk) {
           fullContent += contentChunk;
           progress.report(new vscode.LanguageModelTextPart(contentChunk));
         }
 
-        // Tool calls
         const tcChunks = delta.tool_calls as Array<Record<string, unknown>> | undefined;
         if (tcChunks) {
           for (const tc of tcChunks) {
@@ -98,25 +134,21 @@ export async function streamChatCompletion(params: {
                 arguments: '',
               };
             }
+
             const args = (tc.function as Record<string, string>)?.arguments;
-            if (args) toolCalls[idx]!.arguments += args;
+            if (args) {
+              toolCalls[idx]!.arguments += args;
+            }
           }
         }
 
-        // Usage (usually in last chunk)
         const usage = chunk.usage as DSUsage | undefined;
         if (usage) {
-          lastPromptTokens = usage.prompt_tokens ?? 0;
-          lastCompletionTokens = usage.completion_tokens ?? 0;
+          onUsage?.(prepared.model, usage);
 
-          if (onUsage) {
-            onUsage(prepared.model, usage);
-          }
-
-          // Update chars-per-token ratio
-          if (onCharsPerToken && lastPromptTokens > 0) {
-            const totalChars = fullContent.length + fullReasoning.length;
-            const newRatio = totalChars / lastPromptTokens;
+          const promptTokens = usage.prompt_tokens ?? 0;
+          if (onCharsPerToken && promptTokens > 0 && prepared.inputCharCount > 0) {
+            const newRatio = prepared.inputCharCount / promptTokens;
             if (newRatio > 0.5 && newRatio < 20) {
               onCharsPerToken(newRatio);
             }
@@ -125,33 +157,43 @@ export async function streamChatCompletion(params: {
       }
     }
 
-    // Emit tool calls after streaming completes
     for (const tc of toolCalls) {
-      if (tc && tc.id) {
-        try {
-          const input = JSON.parse(tc.arguments);
-          progress.report(
-            new vscode.LanguageModelToolCallPart(tc.id, tc.name, input),
-          );
-        } catch {
-          progress.report(
-            new vscode.LanguageModelToolCallPart(tc.id, tc.name, {}),
-          );
-        }
+      if (!tc || !tc.id) {
+        continue;
+      }
+
+      emittedToolCalls.push({ id: tc.id, name: tc.name });
+
+      try {
+        progress.report(
+          new vscode.LanguageModelToolCallPart(tc.id, tc.name, JSON.parse(tc.arguments)),
+        );
+      } catch {
+        progress.report(new vscode.LanguageModelToolCallPart(tc.id, tc.name, {}));
       }
     }
 
-    // Cache reasoning_content for next turn (if this turn had tool calls)
-    if (fullReasoning && toolCalls.length > 0) {
-      const userMessages: Array<{ role: string; content?: string | null }> = [];
-      // We need the messages passed in — stored via the closure in the provider
-      // (handled in provider index.ts)
+    persistReasoning();
+
+    if (sawInsufficientSystemResource) {
+      void vscode.window
+        .showErrorMessage(
+          'DeepSeek backend ran out of capacity mid-stream. The response is incomplete.',
+          'Show Logs',
+        )
+        .then((choice) => {
+          if (choice === 'Show Logs') {
+            void vscode.commands.executeCommand('deepseek-qa.showLogs');
+          }
+        });
     }
   } catch (e) {
     if ((e as { name?: string })?.name === 'AbortError') {
+      persistReasoning();
       progress.report(new vscode.LanguageModelTextPart('\n[Cancelled]'));
       return;
     }
+
     logger.error('Stream error', e);
     progress.report(
       new vscode.LanguageModelTextPart(

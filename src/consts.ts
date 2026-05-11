@@ -4,6 +4,7 @@ export const WELCOME_SHOWN_KEY = 'deepseek-qa.welcomeShown';
 /** Prefix/suffix wrapping image descriptions so the model knows they are proxy text. */
 export const IMAGE_DESCRIPTION_PREFIX = '[Image Description: ';
 export const IMAGE_DESCRIPTION_SUFFIX = ']';
+export const IMAGE_DESCRIPTION_UNAVAILABLE = '[Image Description unavailable]';
 
 export const MODELS = [
   {

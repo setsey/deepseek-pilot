@@ -4,32 +4,33 @@ import { logger } from '../../logger';
 
 /**
  * Creates a vision model getter. Returns the user-configured vision proxy
- * model as a LanguageModelChatInformation object. Since selectChatModels
- * is not available in this VS Code API version, we use the setting directly.
+ * model as a LanguageModelChat. The resolved model is cached until settings change.
  */
 export function createVisionModelGetter(): {
-  get: () => Promise<vscode.LanguageModelChatInformation | null>;
+  get: () => Promise<vscode.LanguageModelChat | null>;
   reset: () => void;
 } {
-  let cached: vscode.LanguageModelChatInformation | null = null;
+  let cached: vscode.LanguageModelChat | null | undefined;
 
   return {
     get: async () => {
-      if (cached !== null) return cached;
+      if (cached !== undefined) return cached;
 
-      const settingId = getVisionModelSetting();
+      const settingId = getVisionModelSetting().trim();
       if (!settingId) {
         cached = null;
         return null;
       }
 
-      cached = {
-        id: settingId,
-        name: settingId,
-        family: settingId,
-      } as vscode.LanguageModelChatInformation;
+      const models = await vscode.lm.selectChatModels({ id: settingId });
+      cached = models[0] ?? null;
 
-      logger.info(`Vision proxy model: ${settingId}`);
+      if (cached) {
+        logger.info(`Vision proxy model: ${cached.id}`);
+      } else {
+        logger.warn(`Vision proxy model not found: ${settingId}`);
+      }
+
       return cached;
     },
 

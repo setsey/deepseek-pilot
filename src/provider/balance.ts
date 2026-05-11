@@ -1,5 +1,6 @@
 import vscode from 'vscode';
 import type { DSBalance, DSUsage } from '../types';
+import { getApiUrl, getReasoningEffort } from '../config';
 import { logger } from '../logger';
 
 const PRICING = {
@@ -64,7 +65,7 @@ export class BalanceTracker {
 
   async refreshBalance(apiKey: string): Promise<void> {
     try {
-      const res = await fetch('https://api.deepseek.com/user/balance', {
+      const res = await fetch(getApiUrl('user/balance'), {
         headers: { Authorization: `Bearer ${apiKey}` },
       });
       if (!res.ok) {
@@ -127,6 +128,10 @@ export class BalanceTracker {
     return this.balance;
   }
 
+  refreshDisplay(): void {
+    this.updateStatusBar();
+  }
+
   private updateStatusBar(): void {
     const symbol = this.session.currency === 'CNY' ? '¥' : '$';
     const cost = this.session.estimatedCost;
@@ -147,6 +152,7 @@ export class BalanceTracker {
     let tip = `Session: ${s.promptTokens.toLocaleString()} prompt · ${s.completionTokens.toLocaleString()} completion`;
     tip += `\nCache: ${s.cacheHitTokens.toLocaleString()} hit · ${s.cacheMissTokens.toLocaleString()} miss`;
     tip += `\nEstimated cost: ${symbol}${s.estimatedCost.toFixed(4)}`;
+    tip += `\nReasoning effort: ${getReasoningEffort()}`;
 
     if (b) {
       tip += `\n\nPlatform balance: ${symbol}${b.totalBalance.toFixed(2)}`;

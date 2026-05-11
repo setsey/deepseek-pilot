@@ -2,12 +2,13 @@ import vscode from 'vscode';
 import type { OpenAIChatMessage, OpenAIFunctionToolDef } from '../types';
 import type { AuthManager } from '../auth';
 import type { ReasoningCache } from './cache';
-import { fingerprintAssistantTurn } from './cache';
 import { convertMessages } from './convert';
 import { resolveImageMessages, type VisionDescriptionCacheStats } from './vision/index';
 import { logger } from '../logger';
 import { safeJsonStringify } from '../json';
 import { MODELS } from '../consts';
+import { getApiModelId, getApiUrl, getMaxTokens } from '../config';
+import { getConfiguredThinkingEffort, type ModelConfigurationOptions } from './models';
 
 export interface PreparedRequest {
   url: string;
@@ -16,6 +17,7 @@ export interface PreparedRequest {
   model: string;
   thinking: boolean;
   stream: boolean;
+  inputCharCount: number;
   cacheDiagnostics: VisionDescriptionCacheStats;
 }
 
@@ -26,7 +28,7 @@ export async function prepareChatRequest(params: {
   options: vscode.ProvideLanguageModelChatResponseOptions;
   token: vscode.CancellationToken;
   reasoningCache: ReasoningCache;
-  getVisionModel: () => Promise<vscode.LanguageModelChatInformation | null>;
+  getVisionModel: () => Promise<vscode.LanguageModelChat | null>;
 }): Promise<PreparedRequest> {
   const { authManager, modelInfo, messages, options, token, reasoningCache, getVisionModel } = params;
 
@@ -47,19 +49,8 @@ export async function prepareChatRequest(params: {
 
   const thinking = variant.version === 'thinking';
 
-  // Restore reasoning_content from cache for tool-call turns
-  let reasoningContent: string | undefined;
-  if (thinking) {
-    const fp = fingerprintAssistantTurn(
-      resolvedMessages
-        .filter((m) => m.role === vscode.LanguageModelChatMessageRole.User)
-        .map((m) => ({ role: 'user', content: typeof m.content === 'string' ? m.content : null })),
-    );
-    reasoningContent = reasoningCache.get(fp);
-  }
-
   // Convert to OpenAI format
-  const openaiMessages = convertMessages(resolvedMessages, reasoningContent);
+  const openaiMessages = convertMessages(resolvedMessages, thinking, reasoningCache);
 
   // Convert tool definitions
   const tools: OpenAIFunctionToolDef[] | undefined = options.tools
@@ -74,7 +65,7 @@ export async function prepareChatRequest(params: {
     : undefined;
 
   const body: Record<string, unknown> = {
-    model: variant.family,
+    model: getApiModelId(variant.family),
     messages: openaiMessages,
     stream: true,
   };
@@ -83,19 +74,27 @@ export async function prepareChatRequest(params: {
     body.tools = tools;
   }
   if (thinking) {
+    const reasoningEffort = getConfiguredThinkingEffort(options as ModelConfigurationOptions);
     body.thinking = { type: 'enabled' };
-    body.reasoning_effort = 'max';
+    body.reasoning_effort = reasoningEffort;
+    logger.info(`[req] reasoning_effort=${reasoningEffort} (variant=${variant.id})`);
   }
 
-  const maxTokens = vscode.workspace.getConfiguration('deepseek-qa').get<number>('maxTokens', 0);
-  if (maxTokens > 0) {
+  const requestedMaxTokens =
+    typeof options.modelOptions?.max_tokens === 'number' && options.modelOptions.max_tokens > 0
+      ? Math.min(options.modelOptions.max_tokens, variant.maxOutputTokens)
+      : undefined;
+  const configuredMaxTokens = getMaxTokens();
+  const maxTokens = requestedMaxTokens ??
+    (configuredMaxTokens > 0 ? Math.min(configuredMaxTokens, variant.maxOutputTokens) : undefined);
+  if (maxTokens) {
     body.max_tokens = maxTokens;
   }
 
-  const baseUrl = vscode.workspace.getConfiguration('deepseek-qa').get<string>('baseUrl', 'https://api.deepseek.com');
+  const inputCharCount = countRequestChars(openaiMessages, tools);
 
   return {
-    url: `${baseUrl}/chat/completions`,
+    url: getApiUrl('chat/completions'),
     headers: {
       'Content-Type': 'application/json',
       Authorization: `Bearer ${apiKey}`,
@@ -104,6 +103,30 @@ export async function prepareChatRequest(params: {
     model: variant.family,
     thinking,
     stream: true,
+    inputCharCount,
     cacheDiagnostics,
   };
+}
+
+function countRequestChars(
+  messages: readonly OpenAIChatMessage[],
+  tools: readonly OpenAIFunctionToolDef[] | undefined,
+): number {
+  let totalChars = 0;
+
+  for (const message of messages) {
+    totalChars += message.content?.length ?? 0;
+    totalChars += message.reasoning_content?.length ?? 0;
+
+    for (const toolCall of message.tool_calls ?? []) {
+      totalChars += toolCall.function.name.length;
+      totalChars += toolCall.function.arguments.length;
+    }
+  }
+
+  if (tools && tools.length > 0) {
+    totalChars += safeJsonStringify(tools).length;
+  }
+
+  return totalChars;
 }
