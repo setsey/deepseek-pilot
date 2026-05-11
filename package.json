@@ -156,7 +156,7 @@
     "watch": "npm run clean && tsc -watch -p ./",
     "lint": "npx oxlint",
     "format": "npx oxfmt --write src/",
-    "package": "npx @vscode/vsce package -o dist/",
+    "package": "node scripts/package.mjs",
     "publish": "npx @vscode/vsce publish"
   },
   "devDependencies": {

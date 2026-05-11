@@ -11,6 +11,7 @@ DeepSeek V4 Pro & Flash models in GitHub Copilot Chat with:
 - **API key validation** — probes the API before saving
 
 Merges the best of:
+
 - [Vizards/deepseek-v4-for-copilot](https://github.com/Vizards/deepseek-v4-for-copilot) — vision proxy, clean architecture
 - [Laurent00TT/deepseek-v4-vscode-chat](https://github.com/Laurent00TT/deepseek-v4-vscode-chat) — token tracking, balance, cache stats
 
@@ -20,12 +21,13 @@ Merges the best of:
 git clone local
 cd deepseek-v4-qa
 npm install
-npm run compile
+npm run package
 ```
 
 Then in VS Code: `Extensions` → `...` → `Install from VSIX...` → pick `dist/deepseek-v4-qa-0.1.0.vsix`
 
 Or link directly:
+
 ```bash
 # Create a symlink from your VS Code extensions folder
 mklink /D %USERPROFILE%\.vscode\extensions\konstantyn-ganenkov.deepseek-v4-qa-0.1.0 C:\path\to\deepseek-v4-qa
@@ -34,7 +36,7 @@ mklink /D %USERPROFILE%\.vscode\extensions\konstantyn-ganenkov.deepseek-v4-qa-0.
 ## Commands
 
 | Command | Palette |
-|---------|---------|
+| ------- | ------- |
 | Set API Key | `DeepSeek QA: Set API Key` |
 | Clear API Key | `DeepSeek QA: Clear API Key` |
 | Set Vision Proxy Model | `DeepSeek QA: Set Vision Proxy Model` |
