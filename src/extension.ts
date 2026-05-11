@@ -7,16 +7,18 @@ import { DeepSeekChatProvider } from './provider/index';
 let activeProvider: DeepSeekChatProvider | undefined;
 
 export function activate(context: vscode.ExtensionContext): void {
+  const extVersion = context.extension.packageJSON.version as string;
+  const vscodeVersion = vscode.version;
+  const userAgent = `deepseek-v4-qa/${extVersion} VSCode/${vscodeVersion}`;
+
   logger.info(
-    `DeepSeek V4 QA activating version=${context.extension.packageJSON.version} debug=${getDebugLoggingEnabled()}`,
+    `DeepSeek V4 QA activating version=${extVersion} debug=${getDebugLoggingEnabled()}`,
   );
 
   // Status bar — session spend
   const statusBar = vscode.window.createStatusBarItem(vscode.StatusBarAlignment.Right, 100);
   statusBar.command = 'deepseek-qa.showLogs';
   context.subscriptions.push(statusBar);
-
-  // Output channel already created by logger
 
   context.subscriptions.push(
     vscode.commands.registerCommand('deepseek-qa.showLogs', () => logger.show()),
@@ -26,23 +28,25 @@ export function activate(context: vscode.ExtensionContext): void {
   );
 
   try {
-    const provider = new DeepSeekChatProvider(context, statusBar);
+    const provider = new DeepSeekChatProvider(context, statusBar, userAgent);
     activeProvider = provider;
 
     context.subscriptions.push(
       vscode.commands.registerCommand('deepseek-qa.manage', async () => {
         const picked = await vscode.window.showQuickPick(
           [
-            { label: 'Set API Key', id: 'setApiKey' },
-            { label: 'Clear API Key', id: 'clearApiKey' },
-            { label: 'Set Vision Proxy Model', id: 'setVisionModel' },
-            { label: 'Refresh Balance', id: 'refreshBalance' },
-            { label: 'Open Extension Settings', id: 'openSettings' },
-            { label: 'Get DeepSeek API Key', id: 'getApiKey' },
-            { label: 'Show Logs', id: 'showLogs' },
+            { label: '$(key) Set API Key', id: 'setApiKey' },
+            { label: '$(trash) Clear API Key', id: 'clearApiKey' },
+            { label: '$(eye) Set Vision Proxy Model', id: 'setVisionModel' },
+            { label: '$(refresh) Refresh Balance', id: 'refreshBalance' },
+            { label: '$(clear-all) Clear Session Counter', id: 'clearSession' },
+            { label: '$(database) Show Reasoning Cache Stats', id: 'showCacheStats' },
+            { label: '$(gear) Open Extension Settings', id: 'openSettings' },
+            { label: '$(link-external) Get DeepSeek API Key', id: 'getApiKey' },
+            { label: '$(output) Show Logs', id: 'showLogs' },
           ],
           {
-            title: 'Manage DeepSeek QA Provider',
+            title: 'Manage DeepSeek V4 QA Provider',
             placeHolder: 'Choose an action',
           },
         );
@@ -60,11 +64,22 @@ export function activate(context: vscode.ExtensionContext): void {
           case 'refreshBalance':
             await provider.refreshBalance();
             break;
+          case 'clearSession':
+            provider.clearSession();
+            break;
+          case 'showCacheStats':
+            void vscode.commands.executeCommand('deepseek-qa.showCacheStats');
+            break;
           case 'openSettings':
-            await vscode.commands.executeCommand('workbench.action.openSettings', 'deepseek-qa');
+            await vscode.commands.executeCommand(
+              'workbench.action.openSettings',
+              'deepseek-qa',
+            );
             break;
           case 'getApiKey':
-            await vscode.env.openExternal(vscode.Uri.parse('https://platform.deepseek.com/api_keys'));
+            await vscode.env.openExternal(
+              vscode.Uri.parse('https://platform.deepseek.com/api_keys'),
+            );
             break;
           case 'showLogs':
             logger.show();
@@ -73,45 +88,54 @@ export function activate(context: vscode.ExtensionContext): void {
             break;
         }
       }),
-      vscode.commands.registerCommand('deepseek-qa.setApiKey', () =>
-        provider.configureApiKey(),
-      ),
-      vscode.commands.registerCommand('deepseek-qa.clearApiKey', () =>
-        provider.clearApiKey(),
-      ),
+      vscode.commands.registerCommand('deepseek-qa.setApiKey', () => provider.configureApiKey()),
+      vscode.commands.registerCommand('deepseek-qa.clearApiKey', () => provider.clearApiKey()),
       vscode.commands.registerCommand('deepseek-qa.setVisionModel', () =>
         provider.setVisionProxyModel(),
       ),
       vscode.commands.registerCommand('deepseek-qa.refreshBalance', () =>
         provider.refreshBalance(),
       ),
-      vscode.commands.registerCommand('deepseek-qa.clearSession', () =>
-        provider.clearSession(),
-      ),
+      vscode.commands.registerCommand('deepseek-qa.clearSession', () => provider.clearSession()),
       vscode.commands.registerCommand('deepseek-qa.showCacheStats', () => {
         const stats = provider.getCacheStats();
         const hitPct = (stats.hitRate * 100).toFixed(1);
         const totalKB = (stats.totalBytes / 1024).toFixed(1);
         const largestKB = (stats.largestEntryBytes / 1024).toFixed(1);
+        const totalMaxMB = (stats.totalBytesMax / 1024 / 1024).toFixed(0);
+        const usagePct =
+          stats.totalBytesMax > 0
+            ? ((stats.totalBytes / stats.totalBytesMax) * 100).toFixed(1)
+            : '0';
         const msg = [
           '**DeepSeek V4 QA — Reasoning Cache Stats**',
           '',
           `| Metric | Value |`,
           `|--------|-------|`,
           `| Entries | ${stats.entryCount} / ${stats.maxEntries} |`,
-          `| Total size | ${totalKB} KB |`,
+          `| Total size | ${totalKB} KB (${usagePct}% of ${totalMaxMB} MB max) |`,
           `| Largest entry | ${largestKB} KB |`,
           `| Sets / Gets | ${stats.totalSets} / ${stats.totalGets} |`,
           `| Hits / Misses | ${stats.totalHits} / ${stats.totalMisses} |`,
           `| Hit rate | ${hitPct}% |`,
           `| Evictions | ${stats.totalEvictions} |`,
         ].join('\n');
-        vscode.window.showInformationMessage(
-          `Cache: ${stats.entryCount} entries, ${hitPct}% hit rate`,
-          { modal: false, detail: msg },
-        );
+
+        logger.info('Cache stats requested');
+        logger.show();
+
+        const summary = `Cache: ${stats.entryCount} entries, ${hitPct}% hit rate`;
+        if (stats.totalMisses > 0 && stats.hitRate < 0.5 && stats.totalGets > 4) {
+          void vscode.window.showWarningMessage(
+            `${summary} — low hit rate may cause 400 errors in multi-turn conversations. Try starting a new chat.`,
+            { modal: false, detail: msg },
+          );
+        } else {
+          void vscode.window.showInformationMessage(summary, { modal: false, detail: msg });
+        }
       }),
       vscode.lm.registerLanguageModelChatProvider('deepseek-qa', provider),
+      { dispose: () => provider.dispose() },
     );
 
     provider.refreshModelPicker();
@@ -120,7 +144,7 @@ export function activate(context: vscode.ExtensionContext): void {
       logger.warn('Welcome walkthrough failed', error);
     });
 
-    logger.info(`DeepSeek V4 QA activated version=${context.extension.packageJSON.version}`);
+    logger.info(`DeepSeek V4 QA activated version=${extVersion}`);
   } catch (error) {
     activeProvider = undefined;
     logger.error('Failed to activate DeepSeek V4 QA extension', error);

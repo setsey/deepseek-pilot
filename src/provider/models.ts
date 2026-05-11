@@ -55,8 +55,17 @@ export function getConfiguredThinkingEffort(options: ModelConfigurationOptions):
   const configuredEffort =
     options.modelConfiguration?.reasoningEffort ?? options.configuration?.reasoningEffort;
 
-  if (configuredEffort === 'high') return 'high';
-  if (configuredEffort === 'max') return 'max';
+  // Per DeepSeek thinking_mode docs: `low` and `medium` are mapped to `high`,
+  // and `xhigh` is mapped to `max` for forward/backward compatibility with
+  // other vendors' effort taxonomies (OpenAI, Anthropic, etc).
+  if (configuredEffort === 'max' || configuredEffort === 'xhigh') return 'max';
+  if (
+    configuredEffort === 'high' ||
+    configuredEffort === 'medium' ||
+    configuredEffort === 'low'
+  ) {
+    return 'high';
+  }
   return getReasoningEffort();
 }
 

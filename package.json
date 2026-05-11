@@ -154,6 +154,11 @@
           "editPresentation": "multilineText",
           "default": "Describe the visual contents of this image in detail, including any text, objects, people, or context that would be relevant for understanding it. Focus on factual visual elements.",
           "description": "Prompt sent to the vision proxy model when describing image attachments."
+        },
+        "deepseek-qa.applyProDiscount": {
+          "type": "boolean",
+          "default": false,
+          "markdownDescription": "Apply DeepSeek-V4-Pro's 75% promotional discount when estimating session cost. Auto-expires after the discount window ends (2026-05-31). Off by default so the displayed cost is an upper bound matching post-promo billing."
         }
       }
     },

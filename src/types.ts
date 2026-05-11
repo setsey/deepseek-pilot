@@ -1,5 +1,3 @@
-import type vscode from 'vscode';
-
 export interface OpenAIChatMessage {
   role: 'system' | 'user' | 'assistant' | 'tool';
   content: string | null;
