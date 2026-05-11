@@ -76,16 +76,22 @@ export function convertMessages(
 
         result.push(assistantMessage);
       }
-    } else if (content) {
-      result.push({ role, content });
     }
 
+    // DeepSeek expects tool-result messages to come immediately after the
+    // assistant message that emitted tool_calls. VS Code can represent a
+    // follow-up user turn as mixed content: tool results plus plain text.
+    // Emit tool results first, then any user/system text from the same turn.
     for (const toolResult of toolResults) {
       result.push({
         role: 'tool',
         tool_call_id: toolResult.callId,
         content: toolResult.content,
       });
+    }
+
+    if (role !== 'assistant' && content) {
+      result.push({ role, content });
     }
   }
 
