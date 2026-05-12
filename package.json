@@ -3,7 +3,7 @@
   "displayName": "DeepSeek V4 QA — Vision + Token Tracking",
   "description": "DeepSeek V4 Pro & Flash in Copilot Chat with vision proxy, token tracking, balance estimation, reasoning cache, and session spend. Merges the best of Vizards/deepseek-v4-for-copilot (vision proxy) and Laurent00TT/deepseek-v4-vscode-chat (balance + session tracking).",
   "icon": "resources/icon.png",
-  "version": "0.1.0",
+  "version": "0.1.2",
   "publisher": "konstantyn-ganenkov",
   "license": "MIT",
   "repository": {

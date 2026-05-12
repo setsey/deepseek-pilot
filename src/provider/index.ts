@@ -207,7 +207,17 @@ export class DeepSeekChatProvider implements vscode.LanguageModelChatProvider {
     text: string | vscode.LanguageModelChatRequestMessage,
     _token: vscode.CancellationToken,
   ): Promise<number> {
-    return estimateTokenCount(text, this.charsPerToken);
+    const count = estimateTokenCount(text, this.charsPerToken);
+    // Debug-only trace so we can confirm Copilot Chat's Context Window
+    // widget is actually invoking us. If this never fires while chatting,
+    // the widget is not driven by provideTokenCount and reports 0 because
+    // there is no host-side fallback for third-party providers.
+    const shape =
+      typeof text === 'string'
+        ? `string(len=${text.length})`
+        : `message(parts=${Array.isArray(text.content) ? text.content.length : 'non-array'})`;
+    logger.debug(`provideTokenCount → ${count} tokens (${shape})`);
+    return count;
   }
 
   dispose(): void {
