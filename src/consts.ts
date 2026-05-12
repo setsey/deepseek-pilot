@@ -6,6 +6,14 @@ export const IMAGE_DESCRIPTION_PREFIX = '[Image Description: ';
 export const IMAGE_DESCRIPTION_SUFFIX = ']';
 export const IMAGE_DESCRIPTION_UNAVAILABLE = '[Image Description unavailable]';
 
+/**
+ * MIME type for reporting actual API usage via LanguageModelDataPart.
+ * Emitted so that Copilot Chat can populate its context window widget once
+ * it ships the fix for microsoft/vscode#309207 / #314722 (third-party
+ * providers currently get hardcoded zero usage).
+ */
+export const USAGE_MIME_TYPE = 'application/vnd.llm.usage+json';
+
 export const MODELS = [
   {
     id: 'deepseek-v4-pro::thinking',

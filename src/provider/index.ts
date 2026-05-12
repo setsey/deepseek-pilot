@@ -23,6 +23,7 @@ export class DeepSeekChatProvider implements vscode.LanguageModelChatProvider {
   private vision = createVisionModelGetter();
   private balanceTracker: BalanceTracker;
   private charsPerToken = 4.0;
+  private _tokenCountLogged = false;
 
   readonly onDidChangeLanguageModelChatInformation = this.onDidChangeEmitter.event;
 
@@ -202,21 +203,37 @@ export class DeepSeekChatProvider implements vscode.LanguageModelChatProvider {
     });
   }
 
+  /**
+   * Token counting for Copilot Chat.
+   *
+   * NOTE: Copilot Chat uses `provideTokenCount` for **prompt budgeting**
+   * (deciding when to truncate), and that works correctly. However, the
+   * **context window display widget** does NOT read from this method —
+   * Copilot Chat hardcodes zero usage for all third-party providers
+   * (microsoft/vscode#309207, #314722). The fix must ship in Copilot Chat
+   * itself. Meanwhile, real usage is tracked via the BalanceTracker (which
+   * reads the `usage` field from DeepSeek's SSE stream) and reported in
+   * the status bar.
+   */
   async provideTokenCount(
     _modelInfo: vscode.LanguageModelChatInformation,
     text: string | vscode.LanguageModelChatRequestMessage,
     _token: vscode.CancellationToken,
   ): Promise<number> {
     const count = estimateTokenCount(text, this.charsPerToken);
-    // Debug-only trace so we can confirm Copilot Chat's Context Window
-    // widget is actually invoking us. If this never fires while chatting,
-    // the widget is not driven by provideTokenCount and reports 0 because
-    // there is no host-side fallback for third-party providers.
-    const shape =
-      typeof text === 'string'
-        ? `string(len=${text.length})`
-        : `message(parts=${Array.isArray(text.content) ? text.content.length : 'non-array'})`;
-    logger.debug(`provideTokenCount → ${count} tokens (${shape})`);
+    // Log first invocation at info level so users can confirm Copilot Chat
+    // is calling provideTokenCount for prompt budgeting. Remaining calls
+    // stay at debug level to avoid flooding the output channel.
+    if (!this._tokenCountLogged) {
+      this._tokenCountLogged = true;
+      const shape =
+        typeof text === 'string'
+          ? `string(len=${text.length})`
+          : `message(parts=${Array.isArray(text.content) ? text.content.length : 'non-array'})`;
+      logger.info(`provideTokenCount first call → ${count} tokens (charsPerToken=${this.charsPerToken.toFixed(1)}, ${shape})`);
+    } else {
+      logger.debug(`provideTokenCount → ${count} tokens`);
+    }
     return count;
   }
 

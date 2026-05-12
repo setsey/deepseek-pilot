@@ -4,6 +4,7 @@ import type { ReasoningCache } from './cache';
 import { fingerprintAssistantTurn } from './cache';
 import { tryParseJson } from '../json';
 import { logger } from '../logger';
+import { USAGE_MIME_TYPE } from '../consts';
 import type { DSUsage } from '../types';
 import { fetchWithRetry, formatApiError, notifyApiError } from './errors';
 import { tryParseJSONObject } from './sanitize';
@@ -142,6 +143,22 @@ export async function streamChatCompletion(params: {
           if (onCharsPerToken && promptTokens > 0 && prepared.inputCharCount > 0) {
             const newRatio = prepared.inputCharCount / promptTokens;
             if (newRatio > 0.5 && newRatio < 20) onCharsPerToken(newRatio);
+          }
+
+          // Forward-compatible usage reporting for Copilot Chat's context
+          // window widget. Copilot Chat currently hardcodes zero usage for
+          // all third-party providers (microsoft/vscode#309207, #314722).
+          // The proposed fix is to recognize LanguageModelDataPart with
+          // MIME type "application/vnd.llm.usage+json". Emitting this now
+          // is harmless (ignored by current Copilot Chat) and will light up
+          // the context window widget automatically when Copilot Chat ships
+          // the fix.
+          try {
+            progress.report(
+              vscode.LanguageModelDataPart.json(usage, USAGE_MIME_TYPE),
+            );
+          } catch {
+            /* best-effort — must not break the stream for a display hint */
           }
         }
 
