@@ -9,6 +9,7 @@ import { estimateTokenCount } from './tokens';
 import { ReasoningCache, type CachedTurn } from './cache';
 import { createVisionModelGetter, setVisionProxyModel } from './vision/index';
 import { BalanceTracker } from './balance';
+import { ContextWindowTracker } from './context-window';
 import type { DSUsage } from '../types';
 
 const REASONING_CACHE_STATE_KEY = 'deepseek-qa.reasoningCache';
@@ -22,6 +23,7 @@ export class DeepSeekChatProvider implements vscode.LanguageModelChatProvider {
   private reasoningCache = new ReasoningCache();
   private vision = createVisionModelGetter();
   private balanceTracker: BalanceTracker;
+  private contextTracker: ContextWindowTracker;
   private charsPerToken = 4.0;
   private _tokenCountLogged = false;
 
@@ -30,6 +32,7 @@ export class DeepSeekChatProvider implements vscode.LanguageModelChatProvider {
   constructor(
     context: vscode.ExtensionContext,
     statusBar: vscode.StatusBarItem,
+    contextStatusBar: vscode.StatusBarItem,
     userAgent: string,
   ) {
     this.authManager = new AuthManager(context);
@@ -39,6 +42,7 @@ export class DeepSeekChatProvider implements vscode.LanguageModelChatProvider {
       () => this.authManager.getApiKey(),
       userAgent,
     );
+    this.contextTracker = new ContextWindowTracker(contextStatusBar);
 
     // Restore persisted reasoning cache so multi-turn agent loops survive
     // VS Code restarts.
@@ -196,11 +200,16 @@ export class DeepSeekChatProvider implements vscode.LanguageModelChatProvider {
       reasoningCache: this.reasoningCache,
       onUsage: (model: string, usage: DSUsage) => {
         this.balanceTracker.recordUsage(model, usage);
+        this.contextTracker.recordTurn(modelInfo, usage);
       },
       onCharsPerToken: (ratio: number) => {
         this.charsPerToken = this.charsPerToken * 0.9 + ratio * 0.1;
       },
     });
+  }
+
+  async showContextWindow(): Promise<void> {
+    await this.contextTracker.showDetails();
   }
 
   /**
@@ -244,6 +253,7 @@ export class DeepSeekChatProvider implements vscode.LanguageModelChatProvider {
       this.persistTimer = undefined;
     }
     this.balanceTracker.dispose();
+    this.contextTracker.dispose();
     void this.globalState.update(REASONING_CACHE_STATE_KEY, this.reasoningCache.serialize());
   }
 }

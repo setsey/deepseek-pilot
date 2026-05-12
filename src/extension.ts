@@ -15,10 +15,20 @@ export function activate(context: vscode.ExtensionContext): void {
     `DeepSeek V4 QA activating version=${extVersion} debug=${getDebugLoggingEnabled()}`,
   );
 
-  // Status bar — session spend
+  // Status bar — session spend (right-aligned at priority 100)
   const statusBar = vscode.window.createStatusBarItem(vscode.StatusBarAlignment.Right, 100);
   statusBar.command = 'deepseek-qa.showLogs';
+  statusBar.name = 'DeepSeek Session Spend';
   context.subscriptions.push(statusBar);
+
+  // Status bar — context window (right-aligned at priority 101 so it sits
+  // to the LEFT of the spend item, which is the more frequently consulted
+  // glance value).
+  const contextStatusBar = vscode.window.createStatusBarItem(
+    vscode.StatusBarAlignment.Right,
+    101,
+  );
+  context.subscriptions.push(contextStatusBar);
 
   context.subscriptions.push(
     vscode.commands.registerCommand('deepseek-qa.showLogs', () => logger.show()),
@@ -28,7 +38,7 @@ export function activate(context: vscode.ExtensionContext): void {
   );
 
   try {
-    const provider = new DeepSeekChatProvider(context, statusBar, userAgent);
+    const provider = new DeepSeekChatProvider(context, statusBar, contextStatusBar, userAgent);
     activeProvider = provider;
 
     context.subscriptions.push(
@@ -40,6 +50,7 @@ export function activate(context: vscode.ExtensionContext): void {
             { label: '$(eye) Set Vision Proxy Model', id: 'setVisionModel' },
             { label: '$(refresh) Refresh Balance', id: 'refreshBalance' },
             { label: '$(clear-all) Clear Session Counter', id: 'clearSession' },
+            { label: '$(history) Show Context Window Details', id: 'showContextWindow' },
             { label: '$(database) Show Reasoning Cache Stats', id: 'showCacheStats' },
             { label: '$(gear) Open Extension Settings', id: 'openSettings' },
             { label: '$(link-external) Get DeepSeek API Key', id: 'getApiKey' },
@@ -66,6 +77,9 @@ export function activate(context: vscode.ExtensionContext): void {
             break;
           case 'clearSession':
             provider.clearSession();
+            break;
+          case 'showContextWindow':
+            void vscode.commands.executeCommand('deepseek-qa.showContextWindow');
             break;
           case 'showCacheStats':
             void vscode.commands.executeCommand('deepseek-qa.showCacheStats');
@@ -97,6 +111,9 @@ export function activate(context: vscode.ExtensionContext): void {
         provider.refreshBalance(),
       ),
       vscode.commands.registerCommand('deepseek-qa.clearSession', () => provider.clearSession()),
+      vscode.commands.registerCommand('deepseek-qa.showContextWindow', () =>
+        provider.showContextWindow(),
+      ),
       vscode.commands.registerCommand('deepseek-qa.showCacheStats', () => {
         const stats = provider.getCacheStats();
         const hitPct = (stats.hitRate * 100).toFixed(1);
