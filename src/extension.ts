@@ -15,20 +15,13 @@ export function activate(context: vscode.ExtensionContext): void {
     `DeepSeek V4 QA activating version=${extVersion} debug=${getDebugLoggingEnabled()}`,
   );
 
-  // Status bar — session spend (right-aligned at priority 100)
+  // Combined status bar item: context-window saturation (with colour states
+  // for warn/critical), session cost, and platform balance — all in one
+  // glance. Tooltip has full breakdowns and compaction guidance.
   const statusBar = vscode.window.createStatusBarItem(vscode.StatusBarAlignment.Right, 100);
-  statusBar.command = 'deepseek-qa.showLogs';
-  statusBar.name = 'DeepSeek Session Spend';
+  statusBar.command = 'deepseek-qa.manage';
+  statusBar.name = 'DeepSeek V4 QA';
   context.subscriptions.push(statusBar);
-
-  // Status bar — context window (right-aligned at priority 101 so it sits
-  // to the LEFT of the spend item, which is the more frequently consulted
-  // glance value).
-  const contextStatusBar = vscode.window.createStatusBarItem(
-    vscode.StatusBarAlignment.Right,
-    101,
-  );
-  context.subscriptions.push(contextStatusBar);
 
   context.subscriptions.push(
     vscode.commands.registerCommand('deepseek-qa.showLogs', () => logger.show()),
@@ -38,7 +31,7 @@ export function activate(context: vscode.ExtensionContext): void {
   );
 
   try {
-    const provider = new DeepSeekChatProvider(context, statusBar, contextStatusBar, userAgent);
+    const provider = new DeepSeekChatProvider(context, statusBar, userAgent);
     activeProvider = provider;
 
     context.subscriptions.push(

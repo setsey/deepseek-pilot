@@ -52,10 +52,18 @@ All four variants remain visible in the Copilot Chat model picker.
 
 ## Status Bar
 
-Two right-aligned items:
+One combined right-aligned item:
 
-1. **`Ctx <used>/<max> (NN%) · NN% cached`** — context-window indicator for the last turn. Color shifts to yellow at the warn threshold (default 60%) and red at the critical threshold (default 80%). Click for a detailed breakdown and compaction guidance.
-2. **`DeepSeek QA · $X.XX  $Y.YY`** — running session cost and platform balance. Hover for cache-hit %, reasoning effort, and balance details.
+```
+$(sparkle) DeepSeek QA · 16% ctx · $0.15  $17.07
+```
+
+- **Leading icon** signals context-window state: sparkle (healthy) → history (warn) → warning (critical), with the background colour shifting to yellow/red at the configured thresholds.
+- **`16% ctx`** is the most recent turn's prompt size as a fraction of the model's input window — the actionable "should I compact?" signal.
+- **`$0.15`** is the running session cost.
+- **`$17.07`** is the platform balance after a refresh.
+- **Click** opens the Manage Provider quick pick (set key, refresh balance, context details, cache stats, logs, settings).
+- **Hover** shows the full breakdown: model, cache hit %, last turn details, situation-specific compaction advice, session totals, balance, reasoning effort, and the KV-cache primer.
 
 ## When to compact your chat (DeepSeek-specific)
 

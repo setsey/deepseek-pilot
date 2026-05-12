@@ -32,7 +32,6 @@ export class DeepSeekChatProvider implements vscode.LanguageModelChatProvider {
   constructor(
     context: vscode.ExtensionContext,
     statusBar: vscode.StatusBarItem,
-    contextStatusBar: vscode.StatusBarItem,
     userAgent: string,
   ) {
     this.authManager = new AuthManager(context);
@@ -42,7 +41,8 @@ export class DeepSeekChatProvider implements vscode.LanguageModelChatProvider {
       () => this.authManager.getApiKey(),
       userAgent,
     );
-    this.contextTracker = new ContextWindowTracker(contextStatusBar);
+    this.contextTracker = new ContextWindowTracker();
+    this.balanceTracker.attachContextTracker(this.contextTracker);
 
     // Restore persisted reasoning cache so multi-turn agent loops survive
     // VS Code restarts.
@@ -253,7 +253,6 @@ export class DeepSeekChatProvider implements vscode.LanguageModelChatProvider {
       this.persistTimer = undefined;
     }
     this.balanceTracker.dispose();
-    this.contextTracker.dispose();
     void this.globalState.update(REASONING_CACHE_STATE_KEY, this.reasoningCache.serialize());
   }
 }

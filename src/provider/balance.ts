@@ -2,6 +2,8 @@ import vscode from 'vscode';
 import type { DSBalance, DSUsage } from '../types';
 import { getApiUrl, getApplyProDiscount, getReasoningEffort } from '../config';
 import { logger } from '../logger';
+import type { ContextWindowTracker } from './context-window';
+import { kvCachePrimerMarkdown } from './context-window';
 
 /**
  * DeepSeek-V4-Pro is on a 75% promotional discount until this date.
@@ -77,6 +79,7 @@ export class BalanceTracker {
   private autoRefreshTimer: NodeJS.Timeout | undefined;
   private getApiKey: () => Promise<string | undefined>;
   private userAgent: string;
+  private contextTracker: ContextWindowTracker | undefined;
 
   constructor(
     private readonly statusBar: vscode.StatusBarItem,
@@ -85,6 +88,17 @@ export class BalanceTracker {
   ) {
     this.getApiKey = getApiKey;
     this.userAgent = userAgent;
+    this.updateStatusBar();
+  }
+
+  /**
+   * Attach a context-window tracker. The status bar then folds the
+   * "% of context window used · cache hit %" glance into the single
+   * widget and re-renders when the context tracker fires.
+   */
+  attachContextTracker(tracker: ContextWindowTracker): void {
+    this.contextTracker = tracker;
+    tracker.setOnChange(() => this.updateStatusBar());
     this.updateStatusBar();
   }
 
@@ -250,6 +264,7 @@ export class BalanceTracker {
 
   clearSession(): void {
     this.session = freshSession(this.session.currency);
+    this.contextTracker?.reset();
     this.updateStatusBar();
     vscode.window.showInformationMessage('DeepSeek QA session counter cleared.');
   }
@@ -277,10 +292,32 @@ export class BalanceTracker {
     const sym = currencySymbol(this.session.currency);
     const cost = this.session.estimatedCost;
     const costStr = cost === 0 ? '0' : cost < 0.01 ? '<0.01' : cost.toFixed(2);
-
     const balanceStr = this.balance ? `  ${sym}${this.balance.totalBalance.toFixed(2)}` : '';
-    this.statusBar.text = `$(sparkle) DeepSeek QA · ${sym}${costStr}${balanceStr}`;
+
+    // Fold context-window state into the glance text and the background
+    // color. Order: [icon] DeepSeek QA · [N% ctx] · [cost]  [balance].
+    // The icon (and bg colour) come from the context level so saturation
+    // is the dominant signal.
+    const ctxSnap = this.contextTracker?.snapshot();
+    let icon = '$(sparkle)';
+    let bgColor: vscode.ThemeColor | undefined;
+    let ctxFragment = '';
+
+    if (ctxSnap && ctxSnap.turn) {
+      const ctxPct = `${ctxSnap.pctUsed.toFixed(0)}%`;
+      ctxFragment = ` · ${ctxPct} ctx`;
+      if (ctxSnap.level === 'critical') {
+        icon = '$(warning)';
+        bgColor = new vscode.ThemeColor('statusBarItem.errorBackground');
+      } else if (ctxSnap.level === 'warn') {
+        icon = '$(history)';
+        bgColor = new vscode.ThemeColor('statusBarItem.warningBackground');
+      }
+    }
+
+    this.statusBar.text = `${icon} DeepSeek QA${ctxFragment} · ${sym}${costStr}${balanceStr}`;
     this.statusBar.tooltip = this.buildTooltip();
+    this.statusBar.backgroundColor = bgColor;
     this.statusBar.show();
   }
 
@@ -290,6 +327,23 @@ export class BalanceTracker {
     md.supportThemeIcons = true;
 
     md.appendMarkdown('### DeepSeek V4 QA\n\n');
+
+    // ── Context window (leads with the most actionable signal) ──
+    const ctxSnap = this.contextTracker?.snapshot();
+    if (ctxSnap && ctxSnap.turn) {
+      const turn = ctxSnap.turn;
+      md.appendMarkdown(`**Model** &nbsp; \`${turn.modelName}\`\n\n`);
+      md.appendMarkdown(
+        `**Last turn** &nbsp; ${turn.promptTokens.toLocaleString()} / ${turn.maxInputTokens.toLocaleString()} prompt tokens (**${ctxSnap.pctUsed.toFixed(1)}%**) · ${ctxSnap.cacheHitPct.toFixed(0)}% cached\n\n`,
+      );
+      md.appendMarkdown(`**${ctxSnap.headline}** — ${ctxSnap.advice}\n\n`);
+      md.appendMarkdown(
+        `${kvCachePrimerMarkdown()}\n\n` +
+          '[$(info) Compaction details](command:deepseek-qa.showContextWindow) &nbsp; ' +
+          '[$(gear) Thresholds](command:workbench.action.openSettings?%22deepseek-qa.contextWarnThreshold%22)\n\n',
+      );
+      md.appendMarkdown('---\n\n');
+    }
 
     const sym = currencySymbol(this.session.currency);
     const cacheHitPct =
