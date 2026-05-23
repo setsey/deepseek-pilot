@@ -8,10 +8,13 @@ export const IMAGE_DESCRIPTION_UNAVAILABLE = '[Image Description unavailable]';
 
 /**
  * MIME type for reporting actual API usage via LanguageModelDataPart.
- * Recognized by Copilot Chat 1.120+ to populate the chat-view context window
- * widget for third-party providers (microsoft/vscode#309207, #314722).
+ * Copilot Chat's BYOK consumer (bundled with VS Code 1.120+) checks
+ * `mimeType === "usage"` literally, then parses the JSON and requires
+ * `prompt_tokens`, `completion_tokens`, and `total_tokens` to be numbers
+ * (OpenAI shape — DeepSeek matches). Older hosts that don't recognise this
+ * MIME simply ignore the data part.
  */
-export const USAGE_MIME_TYPE = 'application/vnd.llm.usage+json';
+export const USAGE_MIME_TYPE = 'usage';
 
 /** Max tools per request DeepSeek will accept (used as the toolCalling cap). */
 export const MAX_TOOLS_PER_REQUEST = 128;

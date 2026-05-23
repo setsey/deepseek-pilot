@@ -99,7 +99,7 @@ npm run publish          # npx @vscode/vsce publish
 The long-standing zero-usage bug ([microsoft/vscode#313458](https://github.com/microsoft/vscode/issues/313458), #309207, #314722) was fixed in VS Code 1.120. The built-in chat-view widget now reads:
 
 1. `provideTokenCount` for the prompt-size estimate while the user is typing.
-2. `LanguageModelDataPart.json(usage, 'application/vnd.llm.usage+json')` — emitted by `stream.ts` once DeepSeek's `usage` chunk arrives — for the post-turn actual count.
+2. `LanguageModelDataPart.json(usage, 'usage')` — emitted by `stream.ts` once DeepSeek's `usage` chunk arrives — for the post-turn actual count. The bundled Copilot Chat BYOK consumer (in `f6cfa2ea24/resources/app/extensions/copilot/`) matches on the literal MIME `"usage"` and requires the JSON to carry `prompt_tokens`, `completion_tokens`, and `total_tokens` as numbers; DeepSeek's usage chunk satisfies all three natively.
 
 The extension's `BalanceTracker` status bar widget is still the home for the DeepSeek-specific cache-hit % and KV-cache-aware compaction advice that the built-in widget can't show.
 

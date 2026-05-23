@@ -87,7 +87,7 @@ npm run format     # oxfmt --write src/
 
 ## Host Integration Note: BYOK Context Window Widget
 
-VS Code 1.120 fixed the long-standing zero-usage bug (microsoft/vscode#313458, #309207, #314722). The chat-view widget now reads `provideTokenCount` for the pre-send estimate and `LanguageModelDataPart.json(usage, 'application/vnd.llm.usage+json')` (emitted by `stream.ts`) for the post-turn actual count. The extension's own `BalanceTracker` status bar widget still owns the DeepSeek-specific signals — cache-hit %, KV-cache-aware compaction advice — that the built-in widget cannot show.
+VS Code 1.120 fixed the long-standing zero-usage bug (microsoft/vscode#313458, #309207, #314722). The chat-view widget now reads `provideTokenCount` for the pre-send estimate and `LanguageModelDataPart.json(usage, 'usage')` (emitted by `stream.ts`) for the post-turn actual count. The literal MIME `"usage"` is the contract the bundled Copilot Chat BYOK consumer checks — earlier drafts used `application/vnd.llm.usage+json`, which the consumer silently ignored, leaving the widget pegged at `0 / <window>` until v0.2.1. The extension's own `BalanceTracker` status bar widget still owns the DeepSeek-specific signals — cache-hit %, KV-cache-aware compaction advice — that the built-in widget cannot show.
 
 ## File Map by Concern
 

@@ -146,8 +146,9 @@ export async function streamChatCompletion(params: {
           }
 
           // Sidecar usage payload for Copilot Chat 1.120+'s built-in
-          // context-window widget. Recognised by Copilot Chat when MIME =
-          // "application/vnd.llm.usage+json". Older hosts simply ignore it.
+          // context-window widget. The bundled BYOK consumer matches on
+          // `mimeType === "usage"` and parses the data as OpenAI-shape
+          // usage. See USAGE_MIME_TYPE in ../consts. Older hosts ignore.
           try {
             progress.report(
               vscode.LanguageModelDataPart.json(usage, USAGE_MIME_TYPE),

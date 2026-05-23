@@ -72,7 +72,7 @@ $(sparkle) DeepSeek Pilot · 16% ctx · $0.15  $17.07
 
 ## When to compact your chat (DeepSeek-specific)
 
-VS Code's built-in chat-view context-window widget now reads real BYOK usage (as of VS Code 1.120 — fixing the long-standing [microsoft/vscode#313458](https://github.com/microsoft/vscode/issues/313458)). This extension feeds it via `LanguageModelDataPart.json(usage, "application/vnd.llm.usage+json")` alongside DeepSeek's `usage` chunk, so both `% used` and prompt-token counts populate correctly. The extension's own status-bar widget stays — it surfaces the DeepSeek-specific signal the built-in widget can't (`cache-hit %`) and the cache-aware compaction advice.
+VS Code's built-in chat-view context-window widget now reads real BYOK usage (as of VS Code 1.120 — fixing the long-standing [microsoft/vscode#313458](https://github.com/microsoft/vscode/issues/313458)). This extension feeds it via `LanguageModelDataPart.json(usage, "usage")` alongside DeepSeek's `usage` chunk — the bundled Copilot Chat BYOK consumer matches on the literal MIME `"usage"` and expects OpenAI-shape `prompt_tokens` / `completion_tokens` / `total_tokens` (which DeepSeek returns natively). The extension's own status-bar widget stays — it surfaces the DeepSeek-specific signal the built-in widget can't (`cache-hit %`) and the cache-aware compaction advice.
 
 The reason it matters: **DeepSeek caches by prefix**. Every request that shares its leading tokens with a recent request gets those tokens served from disk cache, billed at ~10% of the normal price and skipping the prefill step entirely. A long, stable chat accumulates a high cache-hit rate — the conversation gets *cheaper and faster* as it grows.
 

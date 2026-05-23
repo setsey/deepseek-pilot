@@ -41,6 +41,7 @@ export interface DSUsage {
   prompt_cache_hit_tokens?: number;
   prompt_cache_miss_tokens?: number;
   completion_tokens?: number;
+  total_tokens?: number;
   completion_tokens_details?: { reasoning_tokens?: number };
 }
 
