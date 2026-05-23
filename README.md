@@ -1,17 +1,21 @@
 # DeepSeek Pilot — VS Code Extension
 
-DeepSeek V4 Pro & Flash models in GitHub Copilot Chat, tuned for long agentic sessions. Built for VS Code **1.120+** (`languageModelChatProviders`, `LanguageModelDataPart`, BYOK context-window widget, `chat.utilityModel`).
+Run **DeepSeek V4 Pro & Flash** inside GitHub Copilot Chat — with the small comforts that make long agentic sessions actually pleasant.
 
-- **Four model variants** — Pro / Flash × thinking / non-thinking, with a per-variant **Thinking Effort** (high / max) control in the model picker, grouped under one "DeepSeek V4" row
-- **Native Copilot Chat integration** — `toolCalling: 128`, `imageInput`, per-model `detail` (pricing hint) and `tooltip` (context capacity), themed `statusIcon` for thinking variants, and a `LanguageModelDataPart.json(usage)` sidecar so VS Code 1.120's built-in chat-view context widget reflects real DeepSeek usage instead of zeros
-- **Wire as Copilot's utility model** — one-click commands to route Copilot's background flows (titles, summaries, commit messages, intent detection) through DeepSeek Flash via `chat.utilityModel` / `chat.utilitySmallModel`
-- **Vision proxy** — drop images into chat; a vision-capable model describes them so text-only DeepSeek can reason over the content. Descriptions are cached by image hash so the same screenshot doesn't re-cost on every turn
-- **Context-window indicator (DeepSeek-aware)** — live "% of window used · cache hit %" status bar item with KV-cache-aware compaction guidance. Sits alongside VS Code's chat-view widget and surfaces the DeepSeek-specific advice the host widget can't (cache-hit-rate, "don't compact early" guidance, configurable thresholds)
-- **Session cost & balance** — token counts, estimated spend in your account currency (USD/CNY auto-detect), and on-demand platform balance refresh. 75% Pro promo discount is opt-in and auto-expires
-- **Persistent reasoning cache** — `reasoning_content` from thinking variants is fingerprinted, persisted across VS Code restarts, and replayed on multi-turn agent loops to preserve DeepSeek's KV cache. Includes a one-shot "Clear Reasoning Cache" command for diagnostics
-- **Robust request pipeline** — schema sanitization, tool-call/tool-result pairing validation, mid-stream truncation detection, retry on transient failures, and debug-only cache-trace snapshots for diagnosing 400s without leaking message content
-- **Model discoverability** — variants stay visible in the picker before an API key is configured (with a warning status icon); setting the key surfaces them automatically
-- **API key validation** — probes the configured endpoint before saving, with a fall-through path for proxy tokens that can't be validated upstream
+DeepSeek's V4 models are dramatically cheaper than the flagships from OpenAI and Anthropic while staying competitive on coding work, and their prefix-cache pricing means a long, stable chat gets *cheaper and faster* as it grows. Copilot Chat ships generic BYOK support — DeepSeek Pilot adds the DeepSeek-specific pieces on top: KV-cache-aware compaction guidance, real session cost and platform balance in the status bar, vision attachments routed through a describer model, and one-click wiring as Copilot's hidden utility model for titles and commit messages.
+
+Requires **VS Code 1.120+** and the GitHub Copilot Chat extension.
+
+## What you get
+
+- **Four model variants in the picker** — Pro and Flash, each with thinking / non-thinking modes, grouped under one **DeepSeek V4** row. Thinking variants expose a per-model **Thinking Effort** (high / max) control.
+- **Drop images into chat with a text-only model** — a vision-capable describer model summarises each attachment so DeepSeek can reason over the content. Descriptions are cached by image hash, so the same screenshot never re-bills.
+- **Live context-window indicator, DeepSeek-aware** — status-bar item showing `% of window used · cache-hit %` with KV-cache-aware guidance ("keep going, your cache is healthy" vs. "compact now"). Configurable thresholds.
+- **Real session cost & platform balance** — token counts, running spend in your account currency (USD / CNY auto-detected from the DeepSeek API), and a one-click balance refresh. The 75% Pro promo discount is opt-in and auto-expires.
+- **Persistent reasoning cache** — reasoning traces from thinking variants are fingerprinted, persisted across VS Code restarts, and replayed during multi-turn agent loops so DeepSeek's KV cache stays warm.
+- **Wire as Copilot's utility model** — one-click commands route Copilot's background flows (chat titles, summaries, commit messages, intent detection) through DeepSeek Flash, where the dollar cost is negligible.
+- **Production-grade request pipeline** — schema sanitisation, tool-call / tool-result pairing, mid-stream truncation detection, retry on transient failures, and debug-only cache-trace snapshots for diagnosing odd 400s without leaking message content.
+- **Friendly setup** — variants stay visible in the picker before an API key is configured (with a warning icon), and key validation probes the configured endpoint before saving, with a fall-through path for proxy tokens that can't be validated upstream.
 
 ## Install
 
