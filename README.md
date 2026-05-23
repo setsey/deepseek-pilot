@@ -13,16 +13,24 @@ DeepSeek V4 Pro & Flash models in GitHub Copilot Chat, tuned for long agentic se
 - **Model discoverability** — variants stay visible in the picker before an API key is configured (with a warning status icon); setting the key surfaces them automatically
 - **API key validation** — probes the configured endpoint before saving, with a fall-through path for proxy tokens that can't be validated upstream
 
-## Install (local build)
+## Install
 
-From the project root:
+**From the Marketplace** (recommended once published):
+
+```text
+ext install konstantyn-ganenkov.deepseek-pilot
+```
+
+Or open the Extensions view (`Ctrl+Shift+X`) and search for **DeepSeek Pilot**.
+
+**From a local build:**
 
 ```bash
 npm install
 npm run package
 ```
 
-Then in VS Code: `Extensions` → `...` → `Install from VSIX...` → pick the newest `dist/deepseek-pilot-<version>.vsix`
+Then in VS Code: `Extensions` → `...` → `Install from VSIX...` → pick the newest `dist/deepseek-pilot-<version>.vsix`.
 
 Or link directly so a `npm run watch` keeps the installed copy in sync:
 
@@ -102,6 +110,14 @@ Adjust thresholds via `deepseek-pilot.contextWarnThreshold` and `deepseek-pilot.
 
 This extension started life by surveying two earlier MIT-licensed DeepSeek-in-Copilot projects — [Vizards/deepseek-v4-for-copilot](https://github.com/Vizards/deepseek-v4-for-copilot) (vision proxy concept) and [Laurent00TT/deepseek-v4-vscode-chat](https://github.com/Laurent00TT/deepseek-v4-vscode-chat) (balance + spend tracking idea). The current codebase has since been substantially rewritten end-to-end: a separate context-window tracker, persistent reasoning cache, hardened request/sanitisation pipeline, vision-description caching, currency-aware billing, KV-cache-aware compaction guidance, and the model variant set are all original to this project. Thanks to both upstreams for the starting direction.
 
+## Support the project
+
+Free and MIT-licensed. If it helps:
+
+- ★ Star the repo on [GitHub](https://github.com/konstantyn-ganenkov/deepseek-pilot)
+- 💖 [Sponsor on GitHub](https://github.com/sponsors/konstantyn-ganenkov)
+- 🐞 [File issues](https://github.com/konstantyn-ganenkov/deepseek-pilot/issues) — include the **DeepSeek Pilot: Show Logs** output if you hit something odd
+
 ## License
 
-MIT — see the LICENSE file.
+MIT — see the [LICENSE](LICENSE) file.

@@ -7,8 +7,21 @@
   "publisher": "konstantyn-ganenkov",
   "license": "MIT",
   "repository": {
-    "type": "git"
+    "type": "git",
+    "url": "https://github.com/konstantyn-ganenkov/deepseek-pilot.git"
   },
+  "bugs": {
+    "url": "https://github.com/konstantyn-ganenkov/deepseek-pilot/issues"
+  },
+  "homepage": "https://github.com/konstantyn-ganenkov/deepseek-pilot#readme",
+  "sponsor": {
+    "url": "https://github.com/sponsors/konstantyn-ganenkov"
+  },
+  "galleryBanner": {
+    "color": "#1e1e2e",
+    "theme": "dark"
+  },
+  "qna": "marketplace",
   "engines": {
     "vscode": "^1.120.0",
     "node": ">=24"
@@ -222,6 +235,14 @@
             "description": "Switch between `high` and `max` for `(thinking)` variants. [Open Reasoning Effort Setting](command:workbench.action.openSettings?%22deepseek-pilot.reasoningEffort%22)",
             "media": {
               "markdown": "resources/walkthrough/tune-effort.md"
+            }
+          },
+          {
+            "id": "support",
+            "title": "Support the project (optional)",
+            "description": "MIT and free. If it helps, [star the repo](https://github.com/konstantyn-ganenkov/deepseek-pilot) or [sponsor on GitHub](https://github.com/sponsors/konstantyn-ganenkov).",
+            "media": {
+              "markdown": "resources/walkthrough/support.md"
             }
           }
         ]
