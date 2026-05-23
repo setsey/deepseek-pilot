@@ -13,22 +13,22 @@ DeepSeek V4 Pro & Flash models in GitHub Copilot Chat, tuned for long agentic se
 - **Model discoverability** — variants stay visible in the picker before an API key is configured (with a warning status icon); setting the key surfaces them automatically
 - **API key validation** — probes the configured endpoint before saving, with a fall-through path for proxy tokens that can't be validated upstream
 
-## Install
+## Install (local build)
+
+From the project root:
 
 ```bash
-git clone local
-cd deepseek-v4-qa
 npm install
 npm run package
 ```
 
 Then in VS Code: `Extensions` → `...` → `Install from VSIX...` → pick the newest `dist/deepseek-v4-qa-<version>.vsix`
 
-Or link directly:
+Or link directly so a `npm run watch` keeps the installed copy in sync:
 
 ```bash
-# Create a symlink from your VS Code extensions folder
-mklink /D %USERPROFILE%\.vscode\extensions\konstantyn-ganenkov.deepseek-v4-qa-0.1.0 C:\path\to\deepseek-v4-qa
+# Symlink from your VS Code extensions folder (Windows; mklink requires an admin shell or developer mode)
+mklink /D %USERPROFILE%\.vscode\extensions\konstantyn-ganenkov.deepseek-v4-qa-<version> C:\path\to\deepseek-v4-qa
 ```
 
 ## Commands

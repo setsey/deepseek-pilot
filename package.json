@@ -7,8 +7,7 @@
   "publisher": "konstantyn-ganenkov",
   "license": "MIT",
   "repository": {
-    "type": "git",
-    "url": "local"
+    "type": "git"
   },
   "engines": {
     "vscode": "^1.120.0",
