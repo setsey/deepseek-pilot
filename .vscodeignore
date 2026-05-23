@@ -6,7 +6,7 @@ ext/**
 node_modules/**
 src/**
 scripts/**
-AGENTS.md
+ARCHITECTURE.md
 package-lock.json
 tsconfig.json
 out/**/*.d.ts
