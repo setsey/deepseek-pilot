@@ -8,14 +8,14 @@
   "license": "MIT",
   "repository": {
     "type": "git",
-    "url": "https://github.com/konstantyn-ganenkov/deepseek-pilot.git"
+    "url": "https://github.com/setsey/deepseek-pilot.git"
   },
   "bugs": {
-    "url": "https://github.com/konstantyn-ganenkov/deepseek-pilot/issues"
+    "url": "https://github.com/setsey/deepseek-pilot/issues"
   },
-  "homepage": "https://github.com/konstantyn-ganenkov/deepseek-pilot#readme",
+  "homepage": "https://github.com/setsey/deepseek-pilot#readme",
   "sponsor": {
-    "url": "https://github.com/sponsors/konstantyn-ganenkov"
+    "url": "https://github.com/sponsors/setsey"
   },
   "galleryBanner": {
     "color": "#1e1e2e",
@@ -240,7 +240,7 @@
           {
             "id": "support",
             "title": "Support the project (optional)",
-            "description": "MIT and free. If it helps, [star the repo](https://github.com/konstantyn-ganenkov/deepseek-pilot) or [sponsor on GitHub](https://github.com/sponsors/konstantyn-ganenkov).",
+            "description": "MIT and free. If it helps, [star the repo](https://github.com/setsey/deepseek-pilot) or [sponsor on GitHub](https://github.com/sponsors/setsey).",
             "media": {
               "markdown": "resources/walkthrough/support.md"
             }

@@ -114,9 +114,9 @@ This extension started life by surveying two earlier MIT-licensed DeepSeek-in-Co
 
 Free and MIT-licensed. If it helps:
 
-- ★ Star the repo on [GitHub](https://github.com/konstantyn-ganenkov/deepseek-pilot)
-- 💖 [Sponsor on GitHub](https://github.com/sponsors/konstantyn-ganenkov)
-- 🐞 [File issues](https://github.com/konstantyn-ganenkov/deepseek-pilot/issues) — include the **DeepSeek Pilot: Show Logs** output if you hit something odd
+- ★ Star the repo on [GitHub](https://github.com/setsey/deepseek-pilot)
+- 💖 [Sponsor on GitHub](https://github.com/sponsors/setsey)
+- 🐞 [File issues](https://github.com/setsey/deepseek-pilot/issues) — include the **DeepSeek Pilot: Show Logs** output if you hit something odd
 
 ## License
 
