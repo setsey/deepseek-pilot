@@ -249,12 +249,12 @@ export async function streamChatCompletion(params: {
         )
         .then((choice) => {
           if (choice === 'Show Logs') {
-            void vscode.commands.executeCommand('deepseek-qa.showLogs');
+            void vscode.commands.executeCommand('deepseek-pilot.showLogs');
           }
         });
     } else if (sawLengthTruncation) {
       void vscode.window.showWarningMessage(
-        'DeepSeek response was truncated (max_tokens limit). Consider increasing `deepseek-qa.maxTokens`.',
+        'DeepSeek response was truncated (max_tokens limit). Consider increasing `deepseek-pilot.maxTokens`.',
       );
     }
   } catch (e) {

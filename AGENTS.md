@@ -1,4 +1,4 @@
-# DeepSeek V4 QA — Developer Guide
+# DeepSeek Pilot — Developer Guide
 
 ## Overview
 
@@ -109,7 +109,7 @@ The extension's `BalanceTracker` status bar widget is still the home for the Dee
 
 ### Debug Logging
 
-`provideTokenCount` first invocation is logged at `info` level to confirm Copilot Chat is calling it. Set `deepseek-qa.debug: true` for full diagnostic output including cache traces and message summaries.
+`provideTokenCount` first invocation is logged at `info` level to confirm Copilot Chat is calling it. Set `deepseek-pilot.debug: true` for full diagnostic output including cache traces and message summaries.
 
 ## Common Tasks
 
@@ -127,14 +127,14 @@ The extension's `BalanceTracker` status bar widget is still the home for the Dee
 
 ### Debugging 400 errors
 
-1. Enable `deepseek-qa.debug: true`
+1. Enable `deepseek-pilot.debug: true`
 2. Check output channel for `diagnostics.ts` cache traces (role sequences, hashes)
 3. Validate with `validate.ts` — checks tool_call / tool_result pairing
 4. Check `sanitize.ts` — malformed function names or unsupported schema keywords
 
 ### Testing vision proxy
 
-1. Configure a vision-capable model: `DeepSeek QA: Set Vision Proxy Model`
+1. Configure a vision-capable model: `DeepSeek Pilot: Set Vision Proxy Model`
 2. Drop an image into Copilot Chat
 3. The image is described by the proxy model, cached, and the description is sent to DeepSeek
 4. Check output channel for vision resolution stats

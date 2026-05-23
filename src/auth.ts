@@ -1,7 +1,7 @@
 import vscode from 'vscode';
 import { getApiUrl } from './config';
 
-const SECRET_KEY = 'deepseek-qa.apiKey';
+const SECRET_KEY = 'deepseek-pilot.apiKey';
 const VALIDATION_PATHS = ['models', 'v1/models'];
 
 export class AuthManager {

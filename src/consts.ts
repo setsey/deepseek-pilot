@@ -1,5 +1,5 @@
-export const WALKTHROUGH_ID = 'konstantyn-ganenkov.deepseek-v4-qa#deepseekQaGettingStarted';
-export const WELCOME_SHOWN_KEY = 'deepseek-qa.welcomeShown';
+export const WALKTHROUGH_ID = 'konstantyn-ganenkov.deepseek-pilot#deepseekPilotGettingStarted';
+export const WELCOME_SHOWN_KEY = 'deepseek-pilot.welcomeShown';
 
 /** Prefix/suffix wrapping image descriptions so the model knows they are proxy text. */
 export const IMAGE_DESCRIPTION_PREFIX = '[Image Description: ';
@@ -38,7 +38,7 @@ export const MODELS = [
     name: 'DeepSeek V4 Pro (thinking)',
     description: 'DeepSeek V4 Pro — strongest, extended thinking, 1M context',
     detail: `Pro · thinking · ${priceHint('pro')}`,
-    vendor: 'deepseek-qa',
+    vendor: 'deepseek-pilot',
     family: 'deepseek-v4-pro',
     version: 'thinking',
     maxInputTokens: 720896,
@@ -50,7 +50,7 @@ export const MODELS = [
     name: 'DeepSeek V4 Pro',
     description: 'DeepSeek V4 Pro — strong, no extended thinking, lower latency',
     detail: `Pro · fast · ${priceHint('pro')}`,
-    vendor: 'deepseek-qa',
+    vendor: 'deepseek-pilot',
     family: 'deepseek-v4-pro',
     version: 'default',
     maxInputTokens: 917504,
@@ -62,7 +62,7 @@ export const MODELS = [
     name: 'DeepSeek V4 Flash (thinking)',
     description: 'DeepSeek V4 Flash — cheapest with extended thinking',
     detail: `Flash · thinking · ${priceHint('flash')}`,
-    vendor: 'deepseek-qa',
+    vendor: 'deepseek-pilot',
     family: 'deepseek-v4-flash',
     version: 'thinking',
     maxInputTokens: 720896,
@@ -74,7 +74,7 @@ export const MODELS = [
     name: 'DeepSeek V4 Flash',
     description: 'DeepSeek V4 Flash — cheapest, no extended thinking',
     detail: `Flash · fast · ${priceHint('flash')}`,
-    vendor: 'deepseek-qa',
+    vendor: 'deepseek-pilot',
     family: 'deepseek-v4-flash',
     version: 'default',
     maxInputTokens: 917504,

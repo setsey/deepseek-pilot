@@ -12,7 +12,7 @@ import { BalanceTracker } from './balance';
 import { ContextWindowTracker } from './context-window';
 import type { DSUsage } from '../types';
 
-const REASONING_CACHE_STATE_KEY = 'deepseek-qa.reasoningCache';
+const REASONING_CACHE_STATE_KEY = 'deepseek-pilot.reasoningCache';
 
 export class DeepSeekChatProvider implements vscode.LanguageModelChatProvider {
   private readonly authManager: AuthManager;
@@ -63,20 +63,20 @@ export class DeepSeekChatProvider implements vscode.LanguageModelChatProvider {
     context.subscriptions.push(
       this.onDidChangeEmitter,
       vscode.workspace.onDidChangeConfiguration((e) => {
-        if (e.affectsConfiguration('deepseek-qa.visionModel')) {
+        if (e.affectsConfiguration('deepseek-pilot.visionModel')) {
           this.vision.reset();
           this.onDidChangeEmitter.fire();
         }
 
         if (
-          e.affectsConfiguration('deepseek-qa.reasoningEffort') ||
-          e.affectsConfiguration('deepseek-qa.baseUrl')
+          e.affectsConfiguration('deepseek-pilot.reasoningEffort') ||
+          e.affectsConfiguration('deepseek-pilot.baseUrl')
         ) {
           this.balanceTracker.refreshDisplay();
         }
       }),
       context.secrets.onDidChange((e) => {
-        if (e.key === 'deepseek-qa.apiKey') {
+        if (e.key === 'deepseek-pilot.apiKey') {
           this.onDidChangeEmitter.fire();
           // Try an initial silent balance fetch once a key is available.
           void this.balanceTracker.refreshBalance(true);
@@ -127,7 +127,7 @@ export class DeepSeekChatProvider implements vscode.LanguageModelChatProvider {
       // Force Copilot Chat to drop our models from the picker before the
       // extension unloads. Returning [] from provideLanguageModelChatInformation
       // (with isActive=false) is what actually removes them.
-      await vscode.lm.selectChatModels({ vendor: 'deepseek-qa' });
+      await vscode.lm.selectChatModels({ vendor: 'deepseek-pilot' });
     } catch {
       /* ignore */
     }

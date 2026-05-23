@@ -1,4 +1,4 @@
-# DeepSeek V4 QA — VS Code Extension
+# DeepSeek Pilot — VS Code Extension
 
 DeepSeek V4 Pro & Flash models in GitHub Copilot Chat, tuned for long agentic sessions. Built for VS Code **1.120+** (`languageModelChatProviders`, `LanguageModelDataPart`, BYOK context-window widget, `chat.utilityModel`).
 
@@ -22,31 +22,31 @@ npm install
 npm run package
 ```
 
-Then in VS Code: `Extensions` → `...` → `Install from VSIX...` → pick the newest `dist/deepseek-v4-qa-<version>.vsix`
+Then in VS Code: `Extensions` → `...` → `Install from VSIX...` → pick the newest `dist/deepseek-pilot-<version>.vsix`
 
 Or link directly so a `npm run watch` keeps the installed copy in sync:
 
 ```bash
 # Symlink from your VS Code extensions folder (Windows; mklink requires an admin shell or developer mode)
-mklink /D %USERPROFILE%\.vscode\extensions\konstantyn-ganenkov.deepseek-v4-qa-<version> C:\path\to\deepseek-v4-qa
+mklink /D %USERPROFILE%\.vscode\extensions\konstantyn-ganenkov.deepseek-pilot-<version> C:\path\to\deepseek-pilot
 ```
 
 ## Commands
 
 | Command | Palette |
 | ------- | ------- |
-| Manage Provider | `DeepSeek QA: Manage Provider` |
-| Set API Key | `DeepSeek QA: Set API Key` |
-| Clear API Key | `DeepSeek QA: Clear API Key` |
-| Set Vision Proxy Model | `DeepSeek QA: Set Vision Proxy Model` |
-| Refresh Balance | `DeepSeek QA: Refresh Balance` |
-| Clear Session Counter | `DeepSeek QA: Clear Session Counter` |
-| Show Context Window Details | `DeepSeek QA: Show Context Window Details` |
-| Show Cache Stats | `DeepSeek QA: Show Reasoning Cache Stats` |
-| Clear Reasoning Cache | `DeepSeek QA: Clear Reasoning Cache` |
-| Use as Copilot Utility Model | `DeepSeek QA: Use as Copilot Utility Model` |
-| Use as Copilot Utility Small Model | `DeepSeek QA: Use as Copilot Utility Small Model` |
-| Show Logs | `DeepSeek QA: Show Logs` |
+| Manage Provider | `DeepSeek Pilot: Manage Provider` |
+| Set API Key | `DeepSeek Pilot: Set API Key` |
+| Clear API Key | `DeepSeek Pilot: Clear API Key` |
+| Set Vision Proxy Model | `DeepSeek Pilot: Set Vision Proxy Model` |
+| Refresh Balance | `DeepSeek Pilot: Refresh Balance` |
+| Clear Session Counter | `DeepSeek Pilot: Clear Session Counter` |
+| Show Context Window Details | `DeepSeek Pilot: Show Context Window Details` |
+| Show Cache Stats | `DeepSeek Pilot: Show Reasoning Cache Stats` |
+| Clear Reasoning Cache | `DeepSeek Pilot: Clear Reasoning Cache` |
+| Use as Copilot Utility Model | `DeepSeek Pilot: Use as Copilot Utility Model` |
+| Use as Copilot Utility Small Model | `DeepSeek Pilot: Use as Copilot Utility Small Model` |
+| Show Logs | `DeepSeek Pilot: Show Logs` |
 
 ## Model Picker
 
@@ -60,7 +60,7 @@ All four variants remain visible in the Copilot Chat model picker.
 One combined right-aligned item:
 
 ```text
-$(sparkle) DeepSeek QA · 16% ctx · $0.15  $17.07
+$(sparkle) DeepSeek Pilot · 16% ctx · $0.15  $17.07
 ```
 
 - **Leading icon** signals context-window state: sparkle (healthy) → history (warn) → warning (critical), with the background colour shifting to yellow/red at the configured thresholds.
@@ -87,16 +87,16 @@ The rules of thumb the widget encodes:
 | > 80% | any | **Compact or start a new chat now.** Truncation is imminent and the KV-cache penalty is worth it at this saturation. |
 | any | < 30% & growing prompt | Something is invalidating the prefix — typically editing earlier messages, switching models mid-chat, or a randomised system context. Should self-recover within a few turns. |
 
-Adjust thresholds via `deepseek-qa.contextWarnThreshold` and `deepseek-qa.contextCriticalThreshold`.
+Adjust thresholds via `deepseek-pilot.contextWarnThreshold` and `deepseek-pilot.contextCriticalThreshold`.
 
 ## Configuration
 
-- `deepseek-qa.reasoningEffort`: default effort for `(thinking)` variants
-- `deepseek-qa.modelIdOverrides`: remap API model IDs for DeepSeek-compatible proxy endpoints
-- `deepseek-qa.baseUrl`: switch between DeepSeek and compatible gateways
-- `deepseek-qa.contextWarnThreshold` / `deepseek-qa.contextCriticalThreshold`: percent thresholds for the context-window indicator
-- `deepseek-qa.applyProDiscount`: apply the 75% Pro promo to cost estimates (off by default; auto-expires 2026-05-31)
-- `deepseek-qa.debug`: emit verbose diagnostics to the **DeepSeek V4 QA** output channel
+- `deepseek-pilot.reasoningEffort`: default effort for `(thinking)` variants
+- `deepseek-pilot.modelIdOverrides`: remap API model IDs for DeepSeek-compatible proxy endpoints
+- `deepseek-pilot.baseUrl`: switch between DeepSeek and compatible gateways
+- `deepseek-pilot.contextWarnThreshold` / `deepseek-pilot.contextCriticalThreshold`: percent thresholds for the context-window indicator
+- `deepseek-pilot.applyProDiscount`: apply the 75% Pro promo to cost estimates (off by default; auto-expires 2026-05-31)
+- `deepseek-pilot.debug`: emit verbose diagnostics to the **DeepSeek Pilot** output channel
 
 ## Prior art
 

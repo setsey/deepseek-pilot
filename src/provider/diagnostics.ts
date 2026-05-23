@@ -12,7 +12,7 @@ import { logger } from '../logger';
  *     showing the exact role sequence and tool_call_id pairing.
  *   - Surface "what changed across turns" so users can tell when their
  *     reasoning_content cache hit/miss rate is off.
- *   - Stay debug-only — only emits when `deepseek-qa.debug` is enabled
+ *   - Stay debug-only — only emits when `deepseek-pilot.debug` is enabled
  *     so normal users see no noise in the output channel.
  *
  * No raw message content ever reaches the log — only role counts, lengths,

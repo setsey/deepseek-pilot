@@ -23,7 +23,7 @@ type RuntimeLanguageModelChatInformation = vscode.LanguageModelChatInformation &
 };
 
 const API_KEY_REQUIRED_DETAIL =
-  'No API key configured. Use "DeepSeek QA: Manage Provider" or "DeepSeek QA: Set API Key".';
+  'No API key configured. Use "DeepSeek Pilot: Manage Provider" or "DeepSeek Pilot: Set API Key".';
 
 export function toChatInfo(
   model: (typeof MODELS)[number],

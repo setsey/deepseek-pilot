@@ -4,7 +4,7 @@ class Logger {
   private channel: vscode.OutputChannel;
 
   constructor() {
-    this.channel = vscode.window.createOutputChannel('DeepSeek V4 QA');
+    this.channel = vscode.window.createOutputChannel('DeepSeek Pilot');
   }
 
   info(message: string, data?: unknown): void {
@@ -20,7 +20,7 @@ class Logger {
   }
 
   debug(message: string, data?: unknown): void {
-    const enabled = vscode.workspace.getConfiguration('deepseek-qa').get<boolean>('debug', false);
+    const enabled = vscode.workspace.getConfiguration('deepseek-pilot').get<boolean>('debug', false);
     if (enabled) {
       this.channel.appendLine(`[DEBUG] ${message}${data ? ' ' + JSON.stringify(data) : ''}`);
     }

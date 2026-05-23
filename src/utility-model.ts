@@ -52,7 +52,7 @@ export async function setCopilotUtilityModel(
   // The chat.utilityModel setting expects a fully-qualified model identifier
   // in `vendor/family/id` form (Copilot Chat normalises this when reading).
   // We write the canonical `vendor/id` shape that Copilot Chat documents.
-  const value = `deepseek-qa/${picked.modelId}`;
+  const value = `deepseek-pilot/${picked.modelId}`;
 
   try {
     await vscode.workspace

@@ -38,7 +38,7 @@ export async function notifyApiError(status: number, summary: string): Promise<v
       'Update API Key',
     );
     if (choice === 'Update API Key') {
-      void vscode.commands.executeCommand('deepseek-qa.setApiKey');
+      void vscode.commands.executeCommand('deepseek-pilot.setApiKey');
     }
     return;
   }
@@ -85,7 +85,7 @@ export async function notifyApiError(status: number, summary: string): Promise<v
       if (choice === 'Start New Chat') {
         void vscode.commands.executeCommand('workbench.action.chat.newChat');
       } else if (choice === 'Show Logs') {
-        void vscode.commands.executeCommand('deepseek-qa.showLogs');
+        void vscode.commands.executeCommand('deepseek-pilot.showLogs');
       }
       return;
     }

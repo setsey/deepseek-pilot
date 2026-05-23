@@ -159,7 +159,7 @@ export class BalanceTracker {
     if (!apiKey) {
       if (!silent) {
         vscode.window.showWarningMessage(
-          'Set your DeepSeek API key first (Command Palette → DeepSeek QA: Set API Key).',
+          'Set your DeepSeek API key first (Command Palette → DeepSeek Pilot: Set API Key).',
         );
       }
       return;
@@ -266,7 +266,7 @@ export class BalanceTracker {
     this.session = freshSession(this.session.currency);
     this.contextTracker?.reset();
     this.updateStatusBar();
-    vscode.window.showInformationMessage('DeepSeek QA session counter cleared.');
+    vscode.window.showInformationMessage('DeepSeek Pilot session counter cleared.');
   }
 
   getSessionSpend(): SessionSpend {
@@ -295,7 +295,7 @@ export class BalanceTracker {
     const balanceStr = this.balance ? `  ${sym}${this.balance.totalBalance.toFixed(2)}` : '';
 
     // Fold context-window state into the glance text and the background
-    // color. Order: [icon] DeepSeek QA · [N% ctx] · [cost]  [balance].
+    // color. Order: [icon] DeepSeek Pilot · [N% ctx] · [cost]  [balance].
     // The icon (and bg colour) come from the context level so saturation
     // is the dominant signal.
     const ctxSnap = this.contextTracker?.snapshot();
@@ -315,7 +315,7 @@ export class BalanceTracker {
       }
     }
 
-    this.statusBar.text = `${icon} DeepSeek QA${ctxFragment} · ${sym}${costStr}${balanceStr}`;
+    this.statusBar.text = `${icon} DeepSeek Pilot${ctxFragment} · ${sym}${costStr}${balanceStr}`;
     this.statusBar.tooltip = this.buildTooltip();
     this.statusBar.backgroundColor = bgColor;
     this.statusBar.show();
@@ -326,7 +326,7 @@ export class BalanceTracker {
     md.isTrusted = true;
     md.supportThemeIcons = true;
 
-    md.appendMarkdown('### DeepSeek V4 QA\n\n');
+    md.appendMarkdown('### DeepSeek Pilot\n\n');
 
     // ── Context window (leads with the most actionable signal) ──
     const ctxSnap = this.contextTracker?.snapshot();
@@ -339,8 +339,8 @@ export class BalanceTracker {
       md.appendMarkdown(`**${ctxSnap.headline}** — ${ctxSnap.advice}\n\n`);
       md.appendMarkdown(
         `${kvCachePrimerMarkdown()}\n\n` +
-          '[$(info) Compaction details](command:deepseek-qa.showContextWindow) &nbsp; ' +
-          '[$(gear) Thresholds](command:workbench.action.openSettings?%22deepseek-qa.contextWarnThreshold%22)\n\n',
+          '[$(info) Compaction details](command:deepseek-pilot.showContextWindow) &nbsp; ' +
+          '[$(gear) Thresholds](command:workbench.action.openSettings?%22deepseek-pilot.contextWarnThreshold%22)\n\n',
       );
       md.appendMarkdown('---\n\n');
     }
@@ -369,19 +369,19 @@ export class BalanceTracker {
       } else {
         md.appendMarkdown(
           `_$(info) Pro 75% discount available until ${endDate} — ` +
-            '[enable](command:workbench.action.openSettings?%22deepseek-qa.applyProDiscount%22) to apply to cost estimates_\n\n',
+            '[enable](command:workbench.action.openSettings?%22deepseek-pilot.applyProDiscount%22) to apply to cost estimates_\n\n',
         );
       }
     }
 
-    md.appendMarkdown(`[$(refresh) Clear session](command:deepseek-qa.clearSession)\n\n`);
+    md.appendMarkdown(`[$(refresh) Clear session](command:deepseek-pilot.clearSession)\n\n`);
 
     md.appendMarkdown('---\n\n');
 
     md.appendMarkdown(
       this.balance
-        ? '**Balance** &nbsp; [$(refresh) refresh](command:deepseek-qa.refreshBalance)\n\n'
-        : '**Balance** &nbsp; [$(refresh) click to fetch](command:deepseek-qa.refreshBalance)\n\n',
+        ? '**Balance** &nbsp; [$(refresh) refresh](command:deepseek-pilot.refreshBalance)\n\n'
+        : '**Balance** &nbsp; [$(refresh) click to fetch](command:deepseek-pilot.refreshBalance)\n\n',
     );
     if (this.balance) {
       const bsym = currencySymbol(this.balance.currency);
@@ -404,9 +404,9 @@ export class BalanceTracker {
     md.appendMarkdown('---\n\n');
     md.appendMarkdown(
       `**Reasoning effort** &nbsp; \`${getReasoningEffort()}\` &nbsp; ` +
-        '[$(gear) configure](command:workbench.action.openSettings?%22deepseek-qa.reasoningEffort%22)\n\n',
+        '[$(gear) configure](command:workbench.action.openSettings?%22deepseek-pilot.reasoningEffort%22)\n\n',
     );
-    md.appendMarkdown('[View full log](command:deepseek-qa.showLogs)');
+    md.appendMarkdown('[View full log](command:deepseek-pilot.showLogs)');
 
     return md;
   }

@@ -2,6 +2,7 @@ import vscode from 'vscode';
 import { getDebugLoggingEnabled } from './config';
 import { WALKTHROUGH_ID, WELCOME_SHOWN_KEY } from './consts';
 import { logger } from './logger';
+import { migrateFromDeepseekQa } from './migrate';
 import { DeepSeekChatProvider } from './provider/index';
 import { setCopilotUtilityModel } from './utility-model';
 
@@ -10,23 +11,30 @@ let activeProvider: DeepSeekChatProvider | undefined;
 export function activate(context: vscode.ExtensionContext): void {
   const extVersion = context.extension.packageJSON.version as string;
   const vscodeVersion = vscode.version;
-  const userAgent = `deepseek-v4-qa/${extVersion} VSCode/${vscodeVersion}`;
+  const userAgent = `deepseek-pilot/${extVersion} VSCode/${vscodeVersion}`;
 
   logger.info(
-    `DeepSeek V4 QA activating version=${extVersion} debug=${getDebugLoggingEnabled()}`,
+    `DeepSeek Pilot activating version=${extVersion} debug=${getDebugLoggingEnabled()}`,
   );
+
+  // One-shot migration from the previous `deepseek-qa` namespace (the
+  // extension formerly known as "deepseek-v4-qa"). Idempotent and best-
+  // effort — never blocks activation.
+  void migrateFromDeepseekQa(context).catch((error) => {
+    logger.warn('Migration shim failed (non-fatal)', error);
+  });
 
   // Combined status bar item: context-window saturation (with colour states
   // for warn/critical), session cost, and platform balance — all in one
   // glance. Tooltip has full breakdowns and compaction guidance.
   const statusBar = vscode.window.createStatusBarItem(vscode.StatusBarAlignment.Right, 100);
-  statusBar.command = 'deepseek-qa.manage';
-  statusBar.name = 'DeepSeek V4 QA';
+  statusBar.command = 'deepseek-pilot.manage';
+  statusBar.name = 'DeepSeek Pilot';
   context.subscriptions.push(statusBar);
 
   context.subscriptions.push(
-    vscode.commands.registerCommand('deepseek-qa.showLogs', () => logger.show()),
-    vscode.commands.registerCommand('deepseek-qa.getApiKey', () =>
+    vscode.commands.registerCommand('deepseek-pilot.showLogs', () => logger.show()),
+    vscode.commands.registerCommand('deepseek-pilot.getApiKey', () =>
       vscode.env.openExternal(vscode.Uri.parse('https://platform.deepseek.com/api_keys')),
     ),
   );
@@ -36,7 +44,7 @@ export function activate(context: vscode.ExtensionContext): void {
     activeProvider = provider;
 
     context.subscriptions.push(
-      vscode.commands.registerCommand('deepseek-qa.manage', async () => {
+      vscode.commands.registerCommand('deepseek-pilot.manage', async () => {
         const picked = await vscode.window.showQuickPick(
           [
             { label: '$(key) Set API Key', id: 'setApiKey' },
@@ -54,7 +62,7 @@ export function activate(context: vscode.ExtensionContext): void {
             { label: '$(output) Show Logs', id: 'showLogs' },
           ],
           {
-            title: `Manage DeepSeek V4 QA Provider (v${extVersion})`,
+            title: `Manage DeepSeek Pilot Provider (v${extVersion})`,
             placeHolder: 'Choose an action',
             matchOnDescription: true,
           },
@@ -83,18 +91,18 @@ export function activate(context: vscode.ExtensionContext): void {
             provider.clearSession();
             break;
           case 'showContextWindow':
-            void vscode.commands.executeCommand('deepseek-qa.showContextWindow');
+            void vscode.commands.executeCommand('deepseek-pilot.showContextWindow');
             break;
           case 'showCacheStats':
-            void vscode.commands.executeCommand('deepseek-qa.showCacheStats');
+            void vscode.commands.executeCommand('deepseek-pilot.showCacheStats');
             break;
           case 'clearReasoningCache':
-            void vscode.commands.executeCommand('deepseek-qa.clearReasoningCache');
+            void vscode.commands.executeCommand('deepseek-pilot.clearReasoningCache');
             break;
           case 'openSettings':
             await vscode.commands.executeCommand(
               'workbench.action.openSettings',
-              'deepseek-qa',
+              'deepseek-pilot',
             );
             break;
           case 'getApiKey':
@@ -109,25 +117,25 @@ export function activate(context: vscode.ExtensionContext): void {
             break;
         }
       }),
-      vscode.commands.registerCommand('deepseek-qa.setApiKey', () => provider.configureApiKey()),
-      vscode.commands.registerCommand('deepseek-qa.clearApiKey', () => provider.clearApiKey()),
-      vscode.commands.registerCommand('deepseek-qa.setVisionModel', () =>
+      vscode.commands.registerCommand('deepseek-pilot.setApiKey', () => provider.configureApiKey()),
+      vscode.commands.registerCommand('deepseek-pilot.clearApiKey', () => provider.clearApiKey()),
+      vscode.commands.registerCommand('deepseek-pilot.setVisionModel', () =>
         provider.setVisionProxyModel(),
       ),
-      vscode.commands.registerCommand('deepseek-qa.setUtilityModel', () =>
+      vscode.commands.registerCommand('deepseek-pilot.setUtilityModel', () =>
         setCopilotUtilityModel('primary'),
       ),
-      vscode.commands.registerCommand('deepseek-qa.setUtilitySmallModel', () =>
+      vscode.commands.registerCommand('deepseek-pilot.setUtilitySmallModel', () =>
         setCopilotUtilityModel('small'),
       ),
-      vscode.commands.registerCommand('deepseek-qa.refreshBalance', () =>
+      vscode.commands.registerCommand('deepseek-pilot.refreshBalance', () =>
         provider.refreshBalance(),
       ),
-      vscode.commands.registerCommand('deepseek-qa.clearSession', () => provider.clearSession()),
-      vscode.commands.registerCommand('deepseek-qa.showContextWindow', () =>
+      vscode.commands.registerCommand('deepseek-pilot.clearSession', () => provider.clearSession()),
+      vscode.commands.registerCommand('deepseek-pilot.showContextWindow', () =>
         provider.showContextWindow(),
       ),
-      vscode.commands.registerCommand('deepseek-qa.clearReasoningCache', async () => {
+      vscode.commands.registerCommand('deepseek-pilot.clearReasoningCache', async () => {
         const choice = await vscode.window.showWarningMessage(
           'Clear the persistent DeepSeek reasoning cache? Multi-turn thinking conversations may temporarily fall back to empty reasoning chains on the next reply.',
           { modal: false },
@@ -137,7 +145,7 @@ export function activate(context: vscode.ExtensionContext): void {
         provider.clearReasoningCache();
         void vscode.window.showInformationMessage('DeepSeek reasoning cache cleared.');
       }),
-      vscode.commands.registerCommand('deepseek-qa.showCacheStats', () => {
+      vscode.commands.registerCommand('deepseek-pilot.showCacheStats', () => {
         const stats = provider.getCacheStats();
         const hitPct = (stats.hitRate * 100).toFixed(1);
         const totalKB = (stats.totalBytes / 1024).toFixed(1);
@@ -148,7 +156,7 @@ export function activate(context: vscode.ExtensionContext): void {
             ? ((stats.totalBytes / stats.totalBytesMax) * 100).toFixed(1)
             : '0';
         const msg = [
-          '**DeepSeek V4 QA — Reasoning Cache Stats**',
+          '**DeepSeek Pilot — Reasoning Cache Stats**',
           '',
           `| Metric | Value |`,
           `|--------|-------|`,
@@ -174,7 +182,7 @@ export function activate(context: vscode.ExtensionContext): void {
           void vscode.window.showInformationMessage(summary, { modal: false, detail: msg });
         }
       }),
-      vscode.lm.registerLanguageModelChatProvider('deepseek-qa', provider),
+      vscode.lm.registerLanguageModelChatProvider('deepseek-pilot', provider),
       { dispose: () => provider.dispose() },
     );
 
@@ -184,11 +192,11 @@ export function activate(context: vscode.ExtensionContext): void {
       logger.warn('Welcome walkthrough failed', error);
     });
 
-    logger.info(`DeepSeek V4 QA activated version=${extVersion}`);
+    logger.info(`DeepSeek Pilot activated version=${extVersion}`);
   } catch (error) {
     activeProvider = undefined;
-    logger.error('Failed to activate DeepSeek V4 QA extension', error);
-    void vscode.window.showErrorMessage('DeepSeek V4 QA: Activation failed. Check the output log.');
+    logger.error('Failed to activate DeepSeek Pilot extension', error);
+    void vscode.window.showErrorMessage('DeepSeek Pilot: Activation failed. Check the output log.');
     throw error;
   }
 }

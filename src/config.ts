@@ -3,7 +3,7 @@ import vscode from 'vscode';
 export type ReasoningEffort = 'high' | 'max';
 
 function getConfig(): vscode.WorkspaceConfiguration {
-  return vscode.workspace.getConfiguration('deepseek-qa');
+  return vscode.workspace.getConfiguration('deepseek-pilot');
 }
 
 export function getDebugLoggingEnabled(): boolean {

@@ -4,7 +4,7 @@ import { logger } from '../../logger';
 
 /**
  * Lazy-resolved vision proxy model. Cached after the first successful
- * lookup and invalidated when the user changes the `deepseek-qa.visionModel`
+ * lookup and invalidated when the user changes the `deepseek-pilot.visionModel`
  * setting (the provider listens to `onDidChangeConfiguration` and calls
  * `reset()`).
  */
@@ -37,7 +37,7 @@ export function createVisionModelGetter(): {
         try {
           const all = await vscode.lm.selectChatModels();
           const candidate = all.find(
-            (m) => m.vendor !== 'deepseek-qa' && m.vendor !== 'deepseek' && m.vendor !== 'deepseek-v4',
+            (m) => m.vendor !== 'deepseek-pilot' && m.vendor !== 'deepseek' && m.vendor !== 'deepseek-v4',
           );
           if (candidate) {
             logger.info(`Vision proxy auto-detected: ${candidate.id}`);
@@ -73,7 +73,7 @@ export function createVisionModelGetter(): {
 export async function setVisionProxyModel(): Promise<void> {
   const allModels = await vscode.lm.selectChatModels();
   const candidates = allModels.filter(
-    (m) => m.vendor !== 'deepseek-qa' && m.vendor !== 'deepseek' && m.vendor !== 'deepseek-v4',
+    (m) => m.vendor !== 'deepseek-pilot' && m.vendor !== 'deepseek' && m.vendor !== 'deepseek-v4',
   );
 
   if (candidates.length === 0) {
@@ -99,7 +99,7 @@ export async function setVisionProxyModel(): Promise<void> {
   if (!picked) return;
 
   await vscode.workspace
-    .getConfiguration('deepseek-qa')
+    .getConfiguration('deepseek-pilot')
     .update('visionModel', picked.label, vscode.ConfigurationTarget.Global);
 
   vscode.window.showInformationMessage(`Vision proxy model set to: ${picked.label}`);

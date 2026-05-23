@@ -51,8 +51,8 @@ export interface ContextSnapshot {
   advice: string;
 }
 
-const WARN_THRESHOLD_KEY = 'deepseek-qa.contextWarnThreshold';
-const CRIT_THRESHOLD_KEY = 'deepseek-qa.contextCriticalThreshold';
+const WARN_THRESHOLD_KEY = 'deepseek-pilot.contextWarnThreshold';
+const CRIT_THRESHOLD_KEY = 'deepseek-pilot.contextCriticalThreshold';
 const DEFAULT_WARN = 60;
 const DEFAULT_CRIT = 80;
 
