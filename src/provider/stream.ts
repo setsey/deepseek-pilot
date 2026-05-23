@@ -145,14 +145,9 @@ export async function streamChatCompletion(params: {
             if (newRatio > 0.5 && newRatio < 20) onCharsPerToken(newRatio);
           }
 
-          // Forward-compatible usage reporting for Copilot Chat's context
-          // window widget. Copilot Chat currently hardcodes zero usage for
-          // all third-party providers (microsoft/vscode#309207, #314722).
-          // The proposed fix is to recognize LanguageModelDataPart with
-          // MIME type "application/vnd.llm.usage+json". Emitting this now
-          // is harmless (ignored by current Copilot Chat) and will light up
-          // the context window widget automatically when Copilot Chat ships
-          // the fix.
+          // Sidecar usage payload for Copilot Chat 1.120+'s built-in
+          // context-window widget. Recognised by Copilot Chat when MIME =
+          // "application/vnd.llm.usage+json". Older hosts simply ignore it.
           try {
             progress.report(
               vscode.LanguageModelDataPart.json(usage, USAGE_MIME_TYPE),
@@ -173,13 +168,27 @@ export async function streamChatCompletion(params: {
           const reasoningChunk = delta.reasoning_content as string | undefined;
           if (reasoningChunk) {
             fullReasoning += reasoningChunk;
+            // LanguageModelThinkingPart is shipping in the proposed API and
+            // becomes available at runtime on newer hosts. Feature-detect
+            // and use it when present so reasoning shows in the chat
+            // reasoning lane; otherwise emit a one-shot text marker so
+            // the user knows the model is thinking even on older hosts.
             const ThinkingCtor = (vscode as unknown as Record<string, unknown>)
               .LanguageModelThinkingPart as
               | (new (value: string, id?: string, metadata?: unknown) => unknown)
               | undefined;
 
             if (ThinkingCtor) {
-              progress.report(new ThinkingCtor(reasoningChunk) as vscode.LanguageModelResponsePart);
+              try {
+                progress.report(
+                  new ThinkingCtor(reasoningChunk) as vscode.LanguageModelResponsePart,
+                );
+              } catch {
+                if (!hasShownThinkingHint) {
+                  progress.report(new vscode.LanguageModelTextPart('💭 Thinking...\n\n'));
+                  hasShownThinkingHint = true;
+                }
+              }
             } else if (!hasShownThinkingHint) {
               progress.report(new vscode.LanguageModelTextPart('💭 Thinking...\n\n'));
               hasShownThinkingHint = true;

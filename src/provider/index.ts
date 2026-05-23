@@ -146,26 +146,16 @@ export class DeepSeekChatProvider implements vscode.LanguageModelChatProvider {
     this.balanceTracker.clearSession();
   }
 
+  clearReasoningCache(): void {
+    this.reasoningCache.clear();
+    void this.globalState.update(REASONING_CACHE_STATE_KEY, []);
+  }
+
   getCacheStats(): ReturnType<ReasoningCache['stats']> {
     return this.reasoningCache.stats();
   }
 
   // ── LanguageModelChatProvider ──
-
-  /**
-   * Some VS Code Insider builds call `prepareLanguageModelChatInformation`
-   * before `provideLanguageModelChatInformation`. Implementing both is
-   * harmless and keeps us forward-compatible.
-   */
-  async prepareLanguageModelChatInformation(
-    _options: { silent: boolean },
-    _token: vscode.CancellationToken,
-  ): Promise<vscode.LanguageModelChatInformation[]> {
-    return this.provideLanguageModelChatInformation(
-      _options as unknown as vscode.PrepareLanguageModelChatModelOptions,
-      _token,
-    );
-  }
 
   async provideLanguageModelChatInformation(
     _options: vscode.PrepareLanguageModelChatModelOptions,
@@ -213,16 +203,12 @@ export class DeepSeekChatProvider implements vscode.LanguageModelChatProvider {
   }
 
   /**
-   * Token counting for Copilot Chat.
-   *
-   * NOTE: Copilot Chat uses `provideTokenCount` for **prompt budgeting**
-   * (deciding when to truncate), and that works correctly. However, the
-   * **context window display widget** does NOT read from this method —
-   * Copilot Chat hardcodes zero usage for all third-party providers
-   * (microsoft/vscode#309207, #314722). The fix must ship in Copilot Chat
-   * itself. Meanwhile, real usage is tracked via the BalanceTracker (which
-   * reads the `usage` field from DeepSeek's SSE stream) and reported in
-   * the status bar.
+   * Token counting for Copilot Chat. Used both for prompt budgeting (when
+   * deciding which earlier messages to truncate) AND, since Copilot Chat
+   * 1.120, for the built-in chat-view context-window widget for BYOK/third-
+   * party providers. We also emit a `LanguageModelDataPart.json(usage)`
+   * sidecar in stream.ts so the widget can reflect real usage from the API
+   * response instead of an estimate.
    */
   async provideTokenCount(
     _modelInfo: vscode.LanguageModelChatInformation,
@@ -230,9 +216,6 @@ export class DeepSeekChatProvider implements vscode.LanguageModelChatProvider {
     _token: vscode.CancellationToken,
   ): Promise<number> {
     const count = estimateTokenCount(text, this.charsPerToken);
-    // Log first invocation at info level so users can confirm Copilot Chat
-    // is calling provideTokenCount for prompt budgeting. Remaining calls
-    // stay at debug level to avoid flooding the output channel.
     if (!this._tokenCountLogged) {
       this._tokenCountLogged = true;
       const shape =

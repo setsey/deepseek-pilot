@@ -1,9 +1,9 @@
 {
   "name": "deepseek-v4-qa",
   "displayName": "DeepSeek V4 QA — Vision + Token Tracking",
-  "description": "DeepSeek V4 Pro & Flash in GitHub Copilot Chat. Vision proxy for image attachments, KV-cache-aware context-window indicator, persistent reasoning cache, live session cost and platform balance in the status bar, and a thinking-effort selector per model variant.",
+  "description": "DeepSeek V4 Pro & Flash in GitHub Copilot Chat. Vision proxy for image attachments, KV-cache-aware context-window indicator, persistent reasoning cache, live session cost and platform balance in the status bar, a thinking-effort selector per model variant, and one-click wiring as Copilot's utility/utility-small model.",
   "icon": "resources/icon.png",
-  "version": "0.1.6",
+  "version": "0.2.0",
   "publisher": "konstantyn-ganenkov",
   "license": "MIT",
   "repository": {
@@ -11,7 +11,7 @@
     "url": "local"
   },
   "engines": {
-    "vscode": "^1.116.0",
+    "vscode": "^1.120.0",
     "node": ">=24"
   },
   "extensionDependencies": [
@@ -95,6 +95,18 @@
       {
         "command": "deepseek-qa.showContextWindow",
         "title": "DeepSeek QA: Show Context Window Details"
+      },
+      {
+        "command": "deepseek-qa.setUtilityModel",
+        "title": "DeepSeek QA: Use as Copilot Utility Model"
+      },
+      {
+        "command": "deepseek-qa.setUtilitySmallModel",
+        "title": "DeepSeek QA: Use as Copilot Utility Small Model"
+      },
+      {
+        "command": "deepseek-qa.clearReasoningCache",
+        "title": "DeepSeek QA: Clear Reasoning Cache"
       }
     ],
     "configuration": {
@@ -229,7 +241,7 @@
   },
   "devDependencies": {
     "@types/node": "^25.6.0",
-    "@types/vscode": "^1.116.0",
+    "@types/vscode": "^1.120.0",
     "@vscode/vsce": "^3.9.1",
     "oxfmt": "^0.47.0",
     "oxlint": "^1.62.0",

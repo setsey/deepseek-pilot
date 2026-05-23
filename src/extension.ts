@@ -3,6 +3,7 @@ import { getDebugLoggingEnabled } from './config';
 import { WALKTHROUGH_ID, WELCOME_SHOWN_KEY } from './consts';
 import { logger } from './logger';
 import { DeepSeekChatProvider } from './provider/index';
+import { setCopilotUtilityModel } from './utility-model';
 
 let activeProvider: DeepSeekChatProvider | undefined;
 
@@ -41,17 +42,21 @@ export function activate(context: vscode.ExtensionContext): void {
             { label: '$(key) Set API Key', id: 'setApiKey' },
             { label: '$(trash) Clear API Key', id: 'clearApiKey' },
             { label: '$(eye) Set Vision Proxy Model', id: 'setVisionModel' },
+            { label: '$(sparkle) Use as Copilot Utility Model', id: 'setUtilityModel', description: 'titles, summaries, commits, intent' },
+            { label: '$(zap) Use as Copilot Utility Small Model', id: 'setUtilitySmallModel', description: 'fast, lightweight flows' },
             { label: '$(refresh) Refresh Balance', id: 'refreshBalance' },
             { label: '$(clear-all) Clear Session Counter', id: 'clearSession' },
             { label: '$(history) Show Context Window Details', id: 'showContextWindow' },
             { label: '$(database) Show Reasoning Cache Stats', id: 'showCacheStats' },
+            { label: '$(trashcan) Clear Reasoning Cache', id: 'clearReasoningCache' },
             { label: '$(gear) Open Extension Settings', id: 'openSettings' },
             { label: '$(link-external) Get DeepSeek API Key', id: 'getApiKey' },
             { label: '$(output) Show Logs', id: 'showLogs' },
           ],
           {
-            title: 'Manage DeepSeek V4 QA Provider',
+            title: `Manage DeepSeek V4 QA Provider (v${extVersion})`,
             placeHolder: 'Choose an action',
+            matchOnDescription: true,
           },
         );
 
@@ -65,6 +70,12 @@ export function activate(context: vscode.ExtensionContext): void {
           case 'setVisionModel':
             await provider.setVisionProxyModel();
             break;
+          case 'setUtilityModel':
+            await setCopilotUtilityModel('primary');
+            break;
+          case 'setUtilitySmallModel':
+            await setCopilotUtilityModel('small');
+            break;
           case 'refreshBalance':
             await provider.refreshBalance();
             break;
@@ -76,6 +87,9 @@ export function activate(context: vscode.ExtensionContext): void {
             break;
           case 'showCacheStats':
             void vscode.commands.executeCommand('deepseek-qa.showCacheStats');
+            break;
+          case 'clearReasoningCache':
+            void vscode.commands.executeCommand('deepseek-qa.clearReasoningCache');
             break;
           case 'openSettings':
             await vscode.commands.executeCommand(
@@ -100,6 +114,12 @@ export function activate(context: vscode.ExtensionContext): void {
       vscode.commands.registerCommand('deepseek-qa.setVisionModel', () =>
         provider.setVisionProxyModel(),
       ),
+      vscode.commands.registerCommand('deepseek-qa.setUtilityModel', () =>
+        setCopilotUtilityModel('primary'),
+      ),
+      vscode.commands.registerCommand('deepseek-qa.setUtilitySmallModel', () =>
+        setCopilotUtilityModel('small'),
+      ),
       vscode.commands.registerCommand('deepseek-qa.refreshBalance', () =>
         provider.refreshBalance(),
       ),
@@ -107,6 +127,16 @@ export function activate(context: vscode.ExtensionContext): void {
       vscode.commands.registerCommand('deepseek-qa.showContextWindow', () =>
         provider.showContextWindow(),
       ),
+      vscode.commands.registerCommand('deepseek-qa.clearReasoningCache', async () => {
+        const choice = await vscode.window.showWarningMessage(
+          'Clear the persistent DeepSeek reasoning cache? Multi-turn thinking conversations may temporarily fall back to empty reasoning chains on the next reply.',
+          { modal: false },
+          'Clear',
+        );
+        if (choice !== 'Clear') return;
+        provider.clearReasoningCache();
+        void vscode.window.showInformationMessage('DeepSeek reasoning cache cleared.');
+      }),
       vscode.commands.registerCommand('deepseek-qa.showCacheStats', () => {
         const stats = provider.getCacheStats();
         const hitPct = (stats.hitRate * 100).toFixed(1);

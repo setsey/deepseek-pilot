@@ -8,51 +8,81 @@ export const IMAGE_DESCRIPTION_UNAVAILABLE = '[Image Description unavailable]';
 
 /**
  * MIME type for reporting actual API usage via LanguageModelDataPart.
- * Emitted so that Copilot Chat can populate its context window widget once
- * it ships the fix for microsoft/vscode#309207 / #314722 (third-party
- * providers currently get hardcoded zero usage).
+ * Recognized by Copilot Chat 1.120+ to populate the chat-view context window
+ * widget for third-party providers (microsoft/vscode#309207, #314722).
  */
 export const USAGE_MIME_TYPE = 'application/vnd.llm.usage+json';
+
+/** Max tools per request DeepSeek will accept (used as the toolCalling cap). */
+export const MAX_TOOLS_PER_REQUEST = 128;
+
+/**
+ * Per-million-token regular pricing (USD) — published 2026-04 by
+ * https://api-docs.deepseek.com/quick_start/pricing. Pricing.ts is the
+ * source of truth for cost computation; this snapshot is only for surfacing
+ * a short "$/Mtok in:out" hint inside the model picker's `detail` field.
+ */
+const PRICE_USD = {
+  pro: { input: 1.74, output: 3.48 },
+  flash: { input: 0.14, output: 0.28 },
+} as const;
+
+function priceHint(family: 'pro' | 'flash'): string {
+  const p = PRICE_USD[family];
+  return `$${p.input}/$${p.output} per Mtok in/out`;
+}
 
 export const MODELS = [
   {
     id: 'deepseek-v4-pro::thinking',
     name: 'DeepSeek V4 Pro (thinking)',
     description: 'DeepSeek V4 Pro — strongest, extended thinking, 1M context',
+    detail: `Pro · thinking · ${priceHint('pro')}`,
     vendor: 'deepseek-qa',
     family: 'deepseek-v4-pro',
     version: 'thinking',
     maxInputTokens: 720896,
     maxOutputTokens: 262144,
+    thinking: true,
   },
   {
     id: 'deepseek-v4-pro',
     name: 'DeepSeek V4 Pro',
     description: 'DeepSeek V4 Pro — strong, no extended thinking, lower latency',
+    detail: `Pro · fast · ${priceHint('pro')}`,
     vendor: 'deepseek-qa',
     family: 'deepseek-v4-pro',
     version: 'default',
     maxInputTokens: 917504,
     maxOutputTokens: 65536,
+    thinking: false,
   },
   {
     id: 'deepseek-v4-flash::thinking',
     name: 'DeepSeek V4 Flash (thinking)',
     description: 'DeepSeek V4 Flash — cheapest with extended thinking',
+    detail: `Flash · thinking · ${priceHint('flash')}`,
     vendor: 'deepseek-qa',
     family: 'deepseek-v4-flash',
     version: 'thinking',
     maxInputTokens: 720896,
     maxOutputTokens: 262144,
+    thinking: true,
   },
   {
     id: 'deepseek-v4-flash',
     name: 'DeepSeek V4 Flash',
     description: 'DeepSeek V4 Flash — cheapest, no extended thinking',
+    detail: `Flash · fast · ${priceHint('flash')}`,
     vendor: 'deepseek-qa',
     family: 'deepseek-v4-flash',
     version: 'default',
     maxInputTokens: 917504,
     maxOutputTokens: 65536,
+    thinking: false,
   },
 ] as const;
+
+/** Settings (Copilot Chat 1.121) for routing utility flows through a chosen model. */
+export const COPILOT_UTILITY_MODEL_SETTING = 'chat.utilityModel';
+export const COPILOT_UTILITY_SMALL_MODEL_SETTING = 'chat.utilitySmallModel';

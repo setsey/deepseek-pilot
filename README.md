@@ -1,14 +1,16 @@
 # DeepSeek V4 QA — VS Code Extension
 
-DeepSeek V4 Pro & Flash models in GitHub Copilot Chat, tuned for long agentic sessions:
+DeepSeek V4 Pro & Flash models in GitHub Copilot Chat, tuned for long agentic sessions. Built for VS Code **1.120+** (`languageModelChatProviders`, `LanguageModelDataPart`, BYOK context-window widget, `chat.utilityModel`).
 
-- **Four model variants** — Pro / Flash × thinking / non-thinking, with a per-variant `Thinking Effort` (high / max) control in the model picker
+- **Four model variants** — Pro / Flash × thinking / non-thinking, with a per-variant **Thinking Effort** (high / max) control in the model picker, grouped under one "DeepSeek V4" row
+- **Native Copilot Chat integration** — `toolCalling: 128`, `imageInput`, per-model `detail` (pricing hint) and `tooltip` (context capacity), themed `statusIcon` for thinking variants, and a `LanguageModelDataPart.json(usage)` sidecar so VS Code 1.120's built-in chat-view context widget reflects real DeepSeek usage instead of zeros
+- **Wire as Copilot's utility model** — one-click commands to route Copilot's background flows (titles, summaries, commit messages, intent detection) through DeepSeek Flash via `chat.utilityModel` / `chat.utilitySmallModel`
 - **Vision proxy** — drop images into chat; a vision-capable model describes them so text-only DeepSeek can reason over the content. Descriptions are cached by image hash so the same screenshot doesn't re-cost on every turn
-- **Context-window indicator** — live "% of window used · cache hit %" status bar item with KV-cache-aware compaction guidance. Replaces Copilot Chat's built-in widget, which is broken for all third-party providers ([microsoft/vscode#313458](https://github.com/microsoft/vscode/issues/313458))
+- **Context-window indicator (DeepSeek-aware)** — live "% of window used · cache hit %" status bar item with KV-cache-aware compaction guidance. Sits alongside VS Code's chat-view widget and surfaces the DeepSeek-specific advice the host widget can't (cache-hit-rate, "don't compact early" guidance, configurable thresholds)
 - **Session cost & balance** — token counts, estimated spend in your account currency (USD/CNY auto-detect), and on-demand platform balance refresh. 75% Pro promo discount is opt-in and auto-expires
-- **Persistent reasoning cache** — `reasoning_content` from thinking variants is fingerprinted, persisted across VS Code restarts, and replayed on multi-turn agent loops to preserve DeepSeek's KV cache
+- **Persistent reasoning cache** — `reasoning_content` from thinking variants is fingerprinted, persisted across VS Code restarts, and replayed on multi-turn agent loops to preserve DeepSeek's KV cache. Includes a one-shot "Clear Reasoning Cache" command for diagnostics
 - **Robust request pipeline** — schema sanitization, tool-call/tool-result pairing validation, mid-stream truncation detection, retry on transient failures, and debug-only cache-trace snapshots for diagnosing 400s without leaking message content
-- **Model discoverability** — variants stay visible in the picker before an API key is configured; setting the key surfaces them automatically
+- **Model discoverability** — variants stay visible in the picker before an API key is configured (with a warning status icon); setting the key surfaces them automatically
 - **API key validation** — probes the configured endpoint before saving, with a fall-through path for proxy tokens that can't be validated upstream
 
 ## Install
@@ -41,6 +43,9 @@ mklink /D %USERPROFILE%\.vscode\extensions\konstantyn-ganenkov.deepseek-v4-qa-0.
 | Clear Session Counter | `DeepSeek QA: Clear Session Counter` |
 | Show Context Window Details | `DeepSeek QA: Show Context Window Details` |
 | Show Cache Stats | `DeepSeek QA: Show Reasoning Cache Stats` |
+| Clear Reasoning Cache | `DeepSeek QA: Clear Reasoning Cache` |
+| Use as Copilot Utility Model | `DeepSeek QA: Use as Copilot Utility Model` |
+| Use as Copilot Utility Small Model | `DeepSeek QA: Use as Copilot Utility Small Model` |
 | Show Logs | `DeepSeek QA: Show Logs` |
 
 ## Model Picker
@@ -54,7 +59,7 @@ All four variants remain visible in the Copilot Chat model picker.
 
 One combined right-aligned item:
 
-```
+```text
 $(sparkle) DeepSeek QA · 16% ctx · $0.15  $17.07
 ```
 
@@ -67,7 +72,7 @@ $(sparkle) DeepSeek QA · 16% ctx · $0.15  $17.07
 
 ## When to compact your chat (DeepSeek-specific)
 
-GitHub Copilot Chat's built-in "Context Window" widget is hardcoded to show `0` for every third-party language-model provider ([microsoft/vscode#313458](https://github.com/microsoft/vscode/issues/313458)). That widget cannot be populated from extension code — so this extension ships its own.
+VS Code's built-in chat-view context-window widget now reads real BYOK usage (as of VS Code 1.120 — fixing the long-standing [microsoft/vscode#313458](https://github.com/microsoft/vscode/issues/313458)). This extension feeds it via `LanguageModelDataPart.json(usage, "application/vnd.llm.usage+json")` alongside DeepSeek's `usage` chunk, so both `% used` and prompt-token counts populate correctly. The extension's own status-bar widget stays — it surfaces the DeepSeek-specific signal the built-in widget can't (`cache-hit %`) and the cache-aware compaction advice.
 
 The reason it matters: **DeepSeek caches by prefix**. Every request that shares its leading tokens with a recent request gets those tokens served from disk cache, billed at ~10% of the normal price and skipping the prefill step entirely. A long, stable chat accumulates a high cache-hit rate — the conversation gets *cheaper and faster* as it grows.
 

@@ -5,20 +5,21 @@
 VS Code extension that registers DeepSeek V4 models (Pro/Flash × thinking/non-thinking) as `LanguageModelChatProvider` for GitHub Copilot Chat. Merges vision proxy from [deepseek-v4-for-copilot](https://github.com/Vizards/deepseek-v4-for-copilot) and balance/token tracking from [deepseek-v4-vscode-chat](https://github.com/Laurent00TT/deepseek-v4-vscode-chat).
 
 - **Language**: TypeScript 6, target ES2022, NodeNext modules
-- **VS Code API**: `^1.116.0` (uses `LanguageModelChatProvider`, `LanguageModelDataPart`, etc.)
+- **VS Code API**: `^1.120.0` (uses `LanguageModelChatProvider`, `LanguageModelDataPart`, `chat.utilityModel`, BYOK context window widget)
 - **Runtime**: Node ≥24
 
 ## Architecture
 
-```
+```text
 src/
 ├── extension.ts          # Activation, commands, status bar, walkthrough
 ├── auth.ts               # API key storage via secrets API + validation
 ├── config.ts             # Workspace configuration readers
-├── consts.ts             # Model definitions, MIME constants, IDs
+├── consts.ts             # Model definitions, MIME constants, IDs, utility-model setting keys
 ├── json.ts               # tryParseJson, safeJsonStringify
 ├── logger.ts             # Output channel logger (debug gated by setting)
 ├── types.ts              # OpenAI/DeepSeek API types (DSBalance, DSUsage, etc.)
+├── utility-model.ts      # `chat.utilityModel` wiring (Copilot Chat 1.121 utility-model slots)
 └── provider/
     ├── index.ts          # DeepSeekChatProvider — main LM provider class
     ├── balance.ts        # BalanceTracker — cost estimation, status bar, session spend
@@ -71,11 +72,13 @@ However, `convert.ts` and `validate.ts` DO use `instanceof` because they're call
 ## Model Variants
 
 | ID | maxInputTokens | maxOutputTokens | Thinking |
-|---|---|---|---|
+| --- | --- | --- | --- |
 | `deepseek-v4-pro::thinking` | 720,896 | 262,144 | yes |
 | `deepseek-v4-pro` | 917,504 | 65,536 | no |
 | `deepseek-v4-flash::thinking` | 720,896 | 262,144 | yes |
 | `deepseek-v4-flash` | 917,504 | 65,536 | no |
+
+All four variants share `category: { label: 'DeepSeek V4' }` so they appear under one collapsible row in the model picker. Each declares `capabilities: { imageInput: true, toolCalling: 128 }` (128 = `MAX_TOOLS_PER_REQUEST` in [consts.ts](src/consts.ts) — matches the DeepSeek API cap). Thinking variants additionally expose a `configurationSchema` for the per-model "Thinking Effort" picker (`high` / `max`).
 
 ## Build & Package
 
@@ -89,17 +92,20 @@ npm run package          # Full clean build + VSIX → dist/
 npm run publish          # npx @vscode/vsce publish
 ```
 
-## Known Issues
+## Host Integration Notes
 
-### Context Window Always Shows 0
+### Built-in Chat View Context Widget (VS Code 1.120+)
 
-**Root cause**: Copilot Chat bug (microsoft/vscode#309207, #314722). `ExtensionContributedChatEndpoint.makeChatRequest2()` hardcodes `{ prompt_tokens: 0, completion_tokens: 0, total_tokens: 0 }` for all third-party providers. The fix must ship in Copilot Chat itself.
+The long-standing zero-usage bug ([microsoft/vscode#313458](https://github.com/microsoft/vscode/issues/313458), #309207, #314722) was fixed in VS Code 1.120. The built-in chat-view widget now reads:
 
-`provideTokenCount` **is working correctly** — Copilot Chat uses it for prompt budgeting/truncation decisions. Just not for display.
+1. `provideTokenCount` for the prompt-size estimate while the user is typing.
+2. `LanguageModelDataPart.json(usage, 'application/vnd.llm.usage+json')` — emitted by `stream.ts` once DeepSeek's `usage` chunk arrives — for the post-turn actual count.
 
-**Forward-compatible fix applied**: `stream.ts` now emits `LanguageModelDataPart.json(usage, 'application/vnd.llm.usage+json')` with actual API usage. This is harmless now (ignored) and will light up the widget automatically when Copilot Chat ships their fix.
+The extension's `BalanceTracker` status bar widget is still the home for the DeepSeek-specific cache-hit % and KV-cache-aware compaction advice that the built-in widget can't show.
 
-**Workaround**: The extension's own `BalanceTracker` in the status bar shows actual token counts and cost.
+### Utility Models (Copilot Chat 1.121)
+
+`src/utility-model.ts` writes either `chat.utilityModel` or `chat.utilitySmallModel` with the canonical `vendor/id` of a chosen DeepSeek variant. Flash is the default suggestion — utility flows (titles, summaries, intents) get no benefit from extended thinking and Flash's pricing makes them effectively free.
 
 ### Debug Logging
 

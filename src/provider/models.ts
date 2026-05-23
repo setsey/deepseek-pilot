@@ -1,6 +1,6 @@
 import vscode from 'vscode';
 import { getReasoningEffort, type ReasoningEffort } from '../config';
-import { MODELS } from '../consts';
+import { MAX_TOOLS_PER_REQUEST, MODELS } from '../consts';
 
 export type ModelConfigurationOptions = vscode.ProvideLanguageModelChatResponseOptions & {
   readonly modelConfiguration?: Record<string, unknown>;
@@ -17,6 +17,7 @@ type RuntimeLanguageModelChatInformation = vscode.LanguageModelChatInformation &
   isUserSelectable: boolean;
   statusIcon?: vscode.ThemeIcon;
   detail?: string;
+  category?: { label: string; order: number };
   configurationSchema?: ThinkingEffortConfigurationSchema;
   capabilities: RuntimeLanguageModelChatCapabilities;
 };
@@ -28,24 +29,36 @@ export function toChatInfo(
   model: (typeof MODELS)[number],
   hasKey: boolean,
 ): vscode.LanguageModelChatInformation {
+  const tooltip = hasKey
+    ? `${model.description}\n\nContext: ${formatTokens(model.maxInputTokens)} in / ${formatTokens(model.maxOutputTokens)} out`
+    : API_KEY_REQUIRED_DETAIL;
+
+  const statusIcon = !hasKey
+    ? new vscode.ThemeIcon('warning')
+    : model.thinking
+      ? new vscode.ThemeIcon('lightbulb-sparkle')
+      : new vscode.ThemeIcon('rocket');
+
   const info: RuntimeLanguageModelChatInformation = {
     id: model.id,
     name: model.name,
     family: model.family,
     version: model.version,
-    detail: hasKey ? model.description : API_KEY_REQUIRED_DETAIL,
-    tooltip: hasKey ? model.description : API_KEY_REQUIRED_DETAIL,
+    detail: hasKey ? model.detail : API_KEY_REQUIRED_DETAIL,
+    tooltip,
     maxInputTokens: model.maxInputTokens,
     maxOutputTokens: model.maxOutputTokens,
     isUserSelectable: true,
-    statusIcon: hasKey ? undefined : new vscode.ThemeIcon('warning'),
+    statusIcon,
+    // Group the four variants under one collapsible row in the model picker.
+    category: { label: 'DeepSeek V4', order: 50 },
     capabilities: {
       imageInput: true,
-      toolCalling: true,
+      // Tell the host the explicit per-request tool cap so it can truncate
+      // long tool lists upstream instead of letting our request.ts throw.
+      toolCalling: MAX_TOOLS_PER_REQUEST,
     },
-    ...(model.version === 'thinking'
-      ? { configurationSchema: buildThinkingEffortSchema() }
-      : {}),
+    ...(model.thinking ? { configurationSchema: buildThinkingEffortSchema() } : {}),
   };
 
   return info;
@@ -86,4 +99,10 @@ function buildThinkingEffortSchema() {
       },
     },
   } as const;
+}
+
+function formatTokens(n: number): string {
+  if (n >= 1_000_000) return `${(n / 1_000_000).toFixed(n % 1_000_000 === 0 ? 0 : 1)}M`;
+  if (n >= 1_000) return `${(n / 1_000).toFixed(0)}K`;
+  return `${n}`;
 }

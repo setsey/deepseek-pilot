@@ -13,4 +13,6 @@ Thinking variants also expose a per-model **Thinking Effort** selector with `hig
 
 **Vision support:** Drop images into chat. The extension automatically proxies them through a vision-capable model, then sends the text description to DeepSeek.
 
-**Status bar:** Shows session token spend and estimated cost. Run **DeepSeek QA: Refresh Balance** to check your platform balance.
+**Use as utility model:** From **Manage Provider**, pick **Use as Copilot Utility Model** (or the *Small* variant) to route Copilot's background flows — titles, summaries, commit messages, intent detection — through DeepSeek Flash. Cheap, fast, no thinking.
+
+**Status bar:** Shows context-window saturation, session token spend, estimated cost, and platform balance — all in one widget. Hover for the KV-cache-aware compaction guidance.
