@@ -44,12 +44,3 @@ export function getVisionPrompt(): string {
     'Describe the visual contents of this image in detail, including any text, objects, people, or context that would be relevant for understanding it. Focus on factual visual elements.',
   );
 }
-
-/**
- * When true, the session cost estimator applies DeepSeek's currently-active
- * 75% promotional discount on `deepseek-v4-pro`. Off by default so the
- * displayed cost is an upper bound that matches non-promo billing.
- */
-export function getApplyProDiscount(): boolean {
-  return getConfig().get<boolean>('applyProDiscount', false);
-}

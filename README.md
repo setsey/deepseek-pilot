@@ -11,9 +11,9 @@ Requires **VS Code 1.120+** and the GitHub Copilot Chat extension.
 - **Four model variants in the picker** — Pro and Flash, each with thinking / non-thinking modes, grouped under one **DeepSeek V4** row. Thinking variants expose a per-model **Thinking Effort** (high / max) control.
 - **Drop images into chat with a text-only model** — a vision-capable describer model summarises each attachment so DeepSeek can reason over the content. Descriptions are cached by image hash, so the same screenshot never re-bills.
 - **Live context-window indicator, DeepSeek-aware** — status-bar item showing `% of window used · cache-hit %` with KV-cache-aware guidance ("keep going, your cache is healthy" vs. "compact now"). Configurable thresholds.
-- **Real session cost & platform balance** — token counts, running spend in your account currency (USD / CNY auto-detected from the DeepSeek API), and a one-click balance refresh. The 75% Pro promo discount is opt-in and auto-expires.
+- **Real session cost & platform balance** — token counts, running spend in your account currency (USD / CNY auto-detected from the DeepSeek API), and a one-click balance refresh. Pricing matches DeepSeek's permanent V4-Pro 75%-off + 1/10 cache-hit rates (announced 2026-05-22).
 - **Persistent reasoning cache** — reasoning traces from thinking variants are fingerprinted, persisted across VS Code restarts, and replayed during multi-turn agent loops so DeepSeek's KV cache stays warm.
-- **Wire as Copilot's utility model** — one-click commands route Copilot's background flows (chat titles, summaries, commit messages, intent detection) through DeepSeek Flash, where the dollar cost is negligible.
+- **Wire as Copilot's utility + utility-small models** — two one-click commands route Copilot's background flows (chat titles, summaries, commit messages, intent detection — plus the lightweight fast-path slot Copilot Chat 1.121 exposes) through DeepSeek Flash, where the dollar cost is negligible.
 - **Production-grade request pipeline** — schema sanitisation, tool-call / tool-result pairing, mid-stream truncation detection, retry on transient failures, and debug-only cache-trace snapshots for diagnosing odd 400s without leaking message content.
 - **Friendly setup** — variants stay visible in the picker before an API key is configured (with a warning icon), and key validation probes the configured endpoint before saving, with a fall-through path for proxy tokens that can't be validated upstream.
 
@@ -107,7 +107,6 @@ Adjust thresholds via `deepseek-pilot.contextWarnThreshold` and `deepseek-pilot.
 - `deepseek-pilot.modelIdOverrides`: remap API model IDs for DeepSeek-compatible proxy endpoints
 - `deepseek-pilot.baseUrl`: switch between DeepSeek and compatible gateways
 - `deepseek-pilot.contextWarnThreshold` / `deepseek-pilot.contextCriticalThreshold`: percent thresholds for the context-window indicator
-- `deepseek-pilot.applyProDiscount`: apply the 75% Pro promo to cost estimates (off by default; auto-expires 2026-05-31)
 - `deepseek-pilot.debug`: emit verbose diagnostics to the **DeepSeek Pilot** output channel
 
 ## Prior art

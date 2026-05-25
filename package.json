@@ -3,7 +3,7 @@
   "displayName": "DeepSeek Pilot — Vision + Token Tracking",
   "description": "DeepSeek V4 Pro & Flash in GitHub Copilot Chat. Vision proxy for image attachments, KV-cache-aware context-window indicator, persistent reasoning cache, live session cost and platform balance in the status bar, a thinking-effort selector per model variant, and one-click wiring as Copilot's utility/utility-small model.",
   "icon": "resources/icon.png",
-  "version": "0.2.1",
+  "version": "0.2.2",
   "publisher": "konstantyn-ganenkov",
   "license": "MIT",
   "repository": {
@@ -182,11 +182,6 @@
           "editPresentation": "multilineText",
           "default": "Describe the visual contents of this image in detail, including any text, objects, people, or context that would be relevant for understanding it. Focus on factual visual elements.",
           "description": "Prompt sent to the vision proxy model when describing image attachments."
-        },
-        "deepseek-pilot.applyProDiscount": {
-          "type": "boolean",
-          "default": false,
-          "markdownDescription": "Apply DeepSeek-V4-Pro's 75% promotional discount when estimating session cost. Auto-expires after the discount window ends (2026-05-31). Off by default so the displayed cost is an upper bound matching post-promo billing."
         },
         "deepseek-pilot.contextWarnThreshold": {
           "type": "number",

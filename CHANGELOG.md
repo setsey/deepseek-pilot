@@ -2,6 +2,18 @@
 
 All notable changes to **DeepSeek Pilot** are recorded here. Format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/); versions follow [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.2.2] — 2026-05-25
+
+### Changed
+- **V4-Pro pricing baked in as permanent.** DeepSeek announced on **2026-05-22** that the previously-promotional 75% off on `deepseek-v4-pro` is now the permanent regular price ("It is officially set to 1/4 of the original price!" — confirmed by Bloomberg, Engadget, the-decoder, DataConomy). Cost estimation now uses the new figures directly: cache-hit $0.003625/M, cache-miss $0.435/M, output $0.87/M (USD); ¥0.025/M, ¥3.0/M, ¥6.0/M (CNY).
+- **V4-Flash cache-hit dropped to 1/10 of cache-miss**, effective **2026-04-26 12:15 UTC** (per DeepSeek's cache-pricing announcement; this change applies to all models — Pro's cache-hit was already at 1/12, the new 1/10 ratio means Flash's hit dropped from $0.028 to $0.0028/M while miss + output stayed at $0.14 / $0.28 per M). CNY mirrors at ¥0.02 / ¥1.0 / ¥2.0.
+- Status-bar tooltip no longer renders the "Pro 75% discount available until …" line — the discount is the price.
+
+### Removed
+- **`deepseek-pilot.applyProDiscount` setting** plus the date-gated `PRO_DISCOUNT_END_UTC` / `PRO_DISCOUNT_FACTOR` logic in `src/provider/balance.ts`. The opt-in toggle is unnecessary now that the discounted rates are the regular rates. Users who had it set in their settings.json will see VS Code mark it as "Unknown configuration setting" — safe to delete the line; the cost estimator will use the new rates either way.
+- `getApplyProDiscount()` helper in `src/config.ts`.
+- `applyProDiscount` entry from the one-shot `deepseek-qa.*` → `deepseek-pilot.*` migration list in `src/migrate.ts` (the old namespace is long gone, but tidy is tidy).
+
 ## [0.2.1] — 2026-05-23
 
 ### Fixed

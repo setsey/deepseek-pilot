@@ -32,7 +32,6 @@ const SETTINGS_TO_MIGRATE = [
   'modelIdOverrides',
   'visionModel',
   'visionPrompt',
-  'applyProDiscount',
   'contextWarnThreshold',
   'contextCriticalThreshold',
 ] as const;

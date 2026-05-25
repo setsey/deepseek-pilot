@@ -1,33 +1,34 @@
 import vscode from 'vscode';
 import type { DSBalance, DSUsage } from '../types';
-import { getApiUrl, getApplyProDiscount, getReasoningEffort } from '../config';
+import { getApiUrl, getReasoningEffort } from '../config';
 import { logger } from '../logger';
 import type { ContextWindowTracker } from './context-window';
 import { kvCachePrimerMarkdown } from './context-window';
 
 /**
- * DeepSeek-V4-Pro is on a 75% promotional discount until this date.
- * Source: https://api-docs.deepseek.com/quick_start/pricing — confirmed
- * via the docs as "extended until 2026/05/31 15:59 UTC".
- * After this timestamp the regular pricing automatically applies.
- */
-const PRO_DISCOUNT_END_UTC = Date.UTC(2026, 4, 31, 15, 59, 0); // months are 0-indexed
-const PRO_DISCOUNT_FACTOR = 0.25; // 75% off = 25% of regular price
-
-/**
- * Per-million-token regular pricing (snapshot 2026-04 from
- * https://api-docs.deepseek.com/quick_start/pricing). DeepSeek-v4-pro
- * carries a limited-time 75% discount during certain windows; we report
- * REGULAR price so the displayed figure is an upper bound on actual cost.
+ * Per-million-token pricing baked in from
+ * https://api-docs.deepseek.com/quick_start/pricing. Two DeepSeek-side
+ * changes between v0.2.1 and v0.2.2 the numbers below already reflect:
+ *   1. **2026-04-26 12:15 UTC** — cache-hit input price for ALL models
+ *      dropped to 1/10 of cache-miss (was 1/12 historically for Pro).
+ *   2. **2026-05-22** — DeepSeek announced the previously-promotional
+ *      V4-Pro 75%-off pricing is now PERMANENT
+ *      (https://x.com/deepseek_ai/status/... — confirmed by Bloomberg,
+ *      Engadget, the-decoder, DataConomy). The pricing page still has
+ *      the stale "promo ends 2026-05-31" wording but lists the post-promo
+ *      rate as 1/4 of original, i.e. unchanged. The `applyProDiscount`
+ *      opt-in is therefore gone.
+ * So Pro = (original × 0.25) for miss/output and (original × 0.025) for
+ * hit; Flash = unchanged miss/output, hit dropped to 1/10 of miss.
  */
 const PRICING = {
   USD: {
-    'deepseek-v4-pro': { cacheHit: 0.145, cacheMiss: 1.74, output: 3.48 },
-    'deepseek-v4-flash': { cacheHit: 0.028, cacheMiss: 0.14, output: 0.28 },
+    'deepseek-v4-pro': { cacheHit: 0.003625, cacheMiss: 0.435, output: 0.87 },
+    'deepseek-v4-flash': { cacheHit: 0.0028, cacheMiss: 0.14, output: 0.28 },
   },
   CNY: {
-    'deepseek-v4-pro': { cacheHit: 1.0, cacheMiss: 12.0, output: 24.0 },
-    'deepseek-v4-flash': { cacheHit: 0.2, cacheMiss: 1.0, output: 2.0 },
+    'deepseek-v4-pro': { cacheHit: 0.025, cacheMiss: 3.0, output: 6.0 },
+    'deepseek-v4-flash': { cacheHit: 0.02, cacheMiss: 1.0, output: 2.0 },
   },
 } as const;
 
@@ -135,23 +136,7 @@ export class BalanceTracker {
 
   private getPricing(model: string) {
     const tier = PRICING[this.session.currency];
-    const base = tier[model as keyof typeof tier] ?? tier['deepseek-v4-pro'];
-
-    // Apply the 75% Pro discount when the user has opted in AND the
-    // promotional window is still active. Flash isn't discounted.
-    if (
-      model === 'deepseek-v4-pro' &&
-      getApplyProDiscount() &&
-      Date.now() < PRO_DISCOUNT_END_UTC
-    ) {
-      return {
-        cacheHit: base.cacheHit * PRO_DISCOUNT_FACTOR,
-        cacheMiss: base.cacheMiss * PRO_DISCOUNT_FACTOR,
-        output: base.output * PRO_DISCOUNT_FACTOR,
-      };
-    }
-
-    return base;
+    return tier[model as keyof typeof tier] ?? tier['deepseek-v4-pro'];
   }
 
   async refreshBalance(silent = false): Promise<void> {
@@ -360,19 +345,6 @@ export class BalanceTracker {
         `(${this.session.reasoningTokens.toLocaleString()} reasoning)\n`,
     );
     md.appendMarkdown(`- Estimated cost: ${sym}${this.session.estimatedCost.toFixed(4)}\n\n`);
-
-    // Flag whether the Pro 75% discount is actively applied to the cost.
-    if (Date.now() < PRO_DISCOUNT_END_UTC) {
-      const endDate = new Date(PRO_DISCOUNT_END_UTC).toISOString().slice(0, 10);
-      if (getApplyProDiscount()) {
-        md.appendMarkdown(`_$(tag) Pro 75% discount applied until ${endDate}_\n\n`);
-      } else {
-        md.appendMarkdown(
-          `_$(info) Pro 75% discount available until ${endDate} — ` +
-            '[enable](command:workbench.action.openSettings?%22deepseek-pilot.applyProDiscount%22) to apply to cost estimates_\n\n',
-        );
-      }
-    }
 
     md.appendMarkdown(`[$(refresh) Clear session](command:deepseek-pilot.clearSession)\n\n`);
 
