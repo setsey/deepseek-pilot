@@ -186,12 +186,12 @@ export async function streamChatCompletion(params: {
                 );
               } catch {
                 if (!hasShownThinkingHint) {
-                  progress.report(new vscode.LanguageModelTextPart('💭 Thinking...\n\n'));
+                  progress.report(new vscode.LanguageModelTextPart(vscode.l10n.t('deepseek-pilot.stream.thinking')));
                   hasShownThinkingHint = true;
                 }
               }
             } else if (!hasShownThinkingHint) {
-              progress.report(new vscode.LanguageModelTextPart('💭 Thinking...\n\n'));
+              progress.report(new vscode.LanguageModelTextPart(vscode.l10n.t('deepseek-pilot.stream.thinking')));
               hasShownThinkingHint = true;
             }
           }
@@ -245,17 +245,17 @@ export async function streamChatCompletion(params: {
     if (sawInsufficientSystemResource) {
       void vscode.window
         .showErrorMessage(
-          'DeepSeek backend ran out of capacity mid-stream. The response is incomplete — please resend.',
-          'Show Logs',
+          vscode.l10n.t('deepseek-pilot.stream.capacityError'),
+          vscode.l10n.t('deepseek-pilot.error.showLogs'),
         )
         .then((choice) => {
-          if (choice === 'Show Logs') {
+          if (choice === vscode.l10n.t('deepseek-pilot.error.showLogs')) {
             void vscode.commands.executeCommand('deepseek-pilot.showLogs');
           }
         });
     } else if (sawLengthTruncation) {
       void vscode.window.showWarningMessage(
-        'DeepSeek response was truncated (max_tokens limit). Consider increasing `deepseek-pilot.maxTokens`.',
+        vscode.l10n.t('deepseek-pilot.stream.truncated'),
       );
     }
   } catch (e) {
