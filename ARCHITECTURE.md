@@ -92,6 +92,15 @@ npm run package          # Full clean build + VSIX → dist/
 npm run publish          # npx @vscode/vsce publish
 ```
 
+## Conventions
+
+- **Author identity** is `setsey <k.ganenkov@gmail.com>` (configured in local git). Single authorship — no co-author trailers.
+- **Before committing**, `npm run compile` and `npm run lint` must both be green (0 TS errors, 0 lint findings). There are no tests yet.
+- **One source of truth for the version**: `package.json` `"version"`. `CHANGELOG.md`'s top entry mirrors it; bump them together.
+- **Comments explain WHY, not WHAT.** Skip docstrings that restate the function name; comment a non-obvious constraint, a host-API quirk, or a subtle invariant (the duck-typing note in `tokens.ts` is the model).
+- **No emojis in prose / markdown / JSON.** UI strings literally rendered to a user are the only exception.
+- **One feature batch per commit** — keep tightly-coupled changes together rather than fanning into partial commits.
+
 ## Host Integration Notes
 
 ### Built-in Chat View Context Widget (VS Code 1.120+)

@@ -1,6 +1,9 @@
 .git/**
 .github/**
+.githooks/**
+.claude/**
 .vscode/**
+CLAUDE.md
 dist/**
 ext/**
 node_modules/**

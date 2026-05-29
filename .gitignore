@@ -3,3 +3,9 @@ out/
 dist/
 *.vsix
 .DS_Store
+
+# Local-only editor/agent config + git hooks — kept out of the public repo.
+# Project architecture + conventions live in ARCHITECTURE.md instead.
+/CLAUDE.md
+.claude/
+.githooks/

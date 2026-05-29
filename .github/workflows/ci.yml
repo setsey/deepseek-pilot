@@ -1,0 +1,43 @@
+name: CI
+
+# Lint + compile + package on every push and PR to main. This does NOT publish
+# to the Marketplace — publishing stays a manual, PAT-gated `npm run publish`
+# the maintainer runs. The packaged .vsix is uploaded as a build artifact so a
+# release candidate can be downloaded and side-loaded for verification.
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+    branches: [main]
+  workflow_dispatch:
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 24
+          cache: npm
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Lint
+        run: npm run lint
+
+      - name: Compile
+        run: npm run compile
+
+      - name: Package VSIX
+        run: npm run package
+
+      - name: Upload VSIX artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: deepseek-pilot-vsix
+          path: dist/*.vsix
+          if-no-files-found: error
