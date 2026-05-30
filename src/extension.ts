@@ -47,23 +47,23 @@ export function activate(context: vscode.ExtensionContext): void {
       vscode.commands.registerCommand('deepseek-pilot.manage', async () => {
         const picked = await vscode.window.showQuickPick(
           [
-            { label: '$(key) Set API Key', id: 'setApiKey' },
-            { label: '$(trash) Clear API Key', id: 'clearApiKey' },
-            { label: '$(eye) Set Vision Proxy Model', id: 'setVisionModel' },
-            { label: '$(sparkle) Use as Copilot Utility Model', id: 'setUtilityModel', description: 'titles, summaries, commits, intent' },
-            { label: '$(zap) Use as Copilot Utility Small Model', id: 'setUtilitySmallModel', description: 'fast, lightweight flows' },
-            { label: '$(refresh) Refresh Balance', id: 'refreshBalance' },
-            { label: '$(clear-all) Clear Session Counter', id: 'clearSession' },
-            { label: '$(history) Show Context Window Details', id: 'showContextWindow' },
-            { label: '$(database) Show Reasoning Cache Stats', id: 'showCacheStats' },
-            { label: '$(trashcan) Clear Reasoning Cache', id: 'clearReasoningCache' },
-            { label: '$(gear) Open Extension Settings', id: 'openSettings' },
-            { label: '$(link-external) Get DeepSeek API Key', id: 'getApiKey' },
-            { label: '$(output) Show Logs', id: 'showLogs' },
+            { label: vscode.l10n.t('deepseek-pilot.quickpick.setApiKey'), id: 'setApiKey' },
+            { label: vscode.l10n.t('deepseek-pilot.quickpick.clearApiKey'), id: 'clearApiKey' },
+            { label: vscode.l10n.t('deepseek-pilot.quickpick.setVisionModel'), id: 'setVisionModel' },
+            { label: vscode.l10n.t('deepseek-pilot.quickpick.setUtilityModel'), id: 'setUtilityModel', description: 'titles, summaries, commits, intent' },
+            { label: vscode.l10n.t('deepseek-pilot.quickpick.setUtilitySmallModel'), id: 'setUtilitySmallModel', description: 'fast, lightweight flows' },
+            { label: vscode.l10n.t('deepseek-pilot.quickpick.refreshBalance'), id: 'refreshBalance' },
+            { label: vscode.l10n.t('deepseek-pilot.quickpick.clearSession'), id: 'clearSession' },
+            { label: vscode.l10n.t('deepseek-pilot.quickpick.showContextWindow'), id: 'showContextWindow' },
+            { label: vscode.l10n.t('deepseek-pilot.quickpick.showCacheStats'), id: 'showCacheStats' },
+            { label: vscode.l10n.t('deepseek-pilot.quickpick.clearReasoningCache'), id: 'clearReasoningCache' },
+            { label: vscode.l10n.t('deepseek-pilot.quickpick.openSettings'), id: 'openSettings' },
+            { label: vscode.l10n.t('deepseek-pilot.quickpick.getApiKey'), id: 'getApiKey' },
+            { label: vscode.l10n.t('deepseek-pilot.quickpick.showLogs'), id: 'showLogs' },
           ],
           {
-            title: `Manage DeepSeek Pilot Provider (v${extVersion})`,
-            placeHolder: 'Choose an action',
+            title: vscode.l10n.t('deepseek-pilot.quickpick.manageTitle', extVersion),
+            placeHolder: vscode.l10n.t('deepseek-pilot.quickpick.managePlaceholder'),
             matchOnDescription: true,
           },
         );
@@ -137,13 +137,13 @@ export function activate(context: vscode.ExtensionContext): void {
       ),
       vscode.commands.registerCommand('deepseek-pilot.clearReasoningCache', async () => {
         const choice = await vscode.window.showWarningMessage(
-          'Clear the persistent DeepSeek reasoning cache? Multi-turn thinking conversations may temporarily fall back to empty reasoning chains on the next reply.',
+          vscode.l10n.t('deepseek-pilot.clearCache.confirm'),
           { modal: false },
-          'Clear',
+          vscode.l10n.t('deepseek-pilot.clearCache.clear'),
         );
-        if (choice !== 'Clear') return;
+        if (choice !== vscode.l10n.t('deepseek-pilot.clearCache.clear')) return;
         provider.clearReasoningCache();
-        void vscode.window.showInformationMessage('DeepSeek reasoning cache cleared.');
+        void vscode.window.showInformationMessage(vscode.l10n.t('deepseek-pilot.clearCache.cleared'));
       }),
       vscode.commands.registerCommand('deepseek-pilot.showCacheStats', () => {
         const stats = provider.getCacheStats();
@@ -156,7 +156,7 @@ export function activate(context: vscode.ExtensionContext): void {
             ? ((stats.totalBytes / stats.totalBytesMax) * 100).toFixed(1)
             : '0';
         const msg = [
-          '**DeepSeek Pilot — Reasoning Cache Stats**',
+          vscode.l10n.t('deepseek-pilot.context.cacheStatsTitle'),
           '',
           `| Metric | Value |`,
           `|--------|-------|`,
@@ -172,10 +172,10 @@ export function activate(context: vscode.ExtensionContext): void {
         logger.info('Cache stats requested');
         logger.show();
 
-        const summary = `Cache: ${stats.entryCount} entries, ${hitPct}% hit rate`;
+        const summary = vscode.l10n.t('deepseek-pilot.context.cacheLow', String(stats.entryCount), hitPct);
         if (stats.totalMisses > 0 && stats.hitRate < 0.5 && stats.totalGets > 4) {
           void vscode.window.showWarningMessage(
-            `${summary} — low hit rate may cause 400 errors in multi-turn conversations. Try starting a new chat.`,
+            vscode.l10n.t('deepseek-pilot.context.cacheLowWarning', summary),
             { modal: false, detail: msg },
           );
         } else {
@@ -196,7 +196,7 @@ export function activate(context: vscode.ExtensionContext): void {
   } catch (error) {
     activeProvider = undefined;
     logger.error('Failed to activate DeepSeek Pilot extension', error);
-    void vscode.window.showErrorMessage('DeepSeek Pilot: Activation failed. Check the output log.');
+    void vscode.window.showErrorMessage(vscode.l10n.t('deepseek-pilot.activate.failed'));
     throw error;
   }
 }

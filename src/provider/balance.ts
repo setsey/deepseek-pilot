@@ -144,7 +144,7 @@ export class BalanceTracker {
     if (!apiKey) {
       if (!silent) {
         vscode.window.showWarningMessage(
-          'Set your DeepSeek API key first (Command Palette → DeepSeek Pilot: Set API Key).',
+          vscode.l10n.t('deepseek-pilot.balance.noApiKey'),
         );
       }
       return;
@@ -162,7 +162,7 @@ export class BalanceTracker {
         const text = await res.text().catch(() => '');
         logger.warn(`Balance fetch failed: ${res.status} ${text.slice(0, 200)}`);
         if (!silent) {
-          vscode.window.showWarningMessage(`Failed to fetch balance: HTTP ${res.status}`);
+          vscode.window.showWarningMessage(vscode.l10n.t('deepseek-pilot.balance.fetchFailed', String(res.status)));
         }
         return;
       }
@@ -183,7 +183,7 @@ export class BalanceTracker {
       const info = data.balance_infos?.[0];
       if (!info) {
         if (!silent) {
-          vscode.window.showWarningMessage('DeepSeek returned an empty balance response.');
+          vscode.window.showWarningMessage(vscode.l10n.t('deepseek-pilot.balance.emptyResponse'));
         }
         return;
       }
@@ -226,7 +226,7 @@ export class BalanceTracker {
       logger.warn('Balance fetch error', e);
       if (!silent) {
         vscode.window.showErrorMessage(
-          `Failed to refresh DeepSeek balance: ${e instanceof Error ? e.message : String(e)}`,
+          vscode.l10n.t('deepseek-pilot.balance.refreshFailed', e instanceof Error ? e.message : String(e)),
         );
       }
     }
@@ -251,7 +251,7 @@ export class BalanceTracker {
     this.session = freshSession(this.session.currency);
     this.contextTracker?.reset();
     this.updateStatusBar();
-    vscode.window.showInformationMessage('DeepSeek Pilot session counter cleared.');
+    vscode.window.showInformationMessage(vscode.l10n.t('deepseek-pilot.balance.sessionCleared'));
   }
 
   getSessionSpend(): SessionSpend {

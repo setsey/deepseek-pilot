@@ -78,7 +78,7 @@ export async function setVisionProxyModel(): Promise<void> {
 
   if (candidates.length === 0) {
     vscode.window.showInformationMessage(
-      'No vision-capable models found. Sign in to GitHub Copilot Chat to enable vision proxy.',
+      vscode.l10n.t('deepseek-pilot.vision.noModels'),
     );
     return;
   }
@@ -88,11 +88,11 @@ export async function setVisionProxyModel(): Promise<void> {
   const items = candidates.map((m) => ({
     label: m.id,
     description: m.vendor,
-    detail: m.id === currentId ? 'Currently selected' : undefined,
+    detail: m.id === currentId ? vscode.l10n.t('deepseek-pilot.vision.currentlySelected') : undefined,
   }));
 
   const picked = await vscode.window.showQuickPick(items, {
-    placeHolder: 'Pick a model to describe images before sending them to DeepSeek',
+    placeHolder: vscode.l10n.t('deepseek-pilot.vision.placeholder'),
     matchOnDescription: true,
   });
 
@@ -102,5 +102,5 @@ export async function setVisionProxyModel(): Promise<void> {
     .getConfiguration('deepseek-pilot')
     .update('visionModel', picked.label, vscode.ConfigurationTarget.Global);
 
-  vscode.window.showInformationMessage(`Vision proxy model set to: ${picked.label}`);
+  vscode.window.showInformationMessage(vscode.l10n.t('deepseek-pilot.vision.setTo', picked.label));
 }

@@ -100,7 +100,7 @@ export class DeepSeekChatProvider implements vscode.LanguageModelChatProvider {
   async clearApiKey(): Promise<void> {
     await this.authManager.deleteApiKey();
     this.onDidChangeEmitter.fire();
-    vscode.window.showInformationMessage('DeepSeek API key removed.');
+    vscode.window.showInformationMessage(vscode.l10n.t('deepseek-pilot.clearApiKey.removed'));
   }
 
   async hasApiKey(): Promise<boolean> {

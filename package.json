@@ -22,6 +22,7 @@
     "theme": "dark"
   },
   "qna": "marketplace",
+  "l10n": "./l10n",
   "engines": {
     "vscode": "^1.120.0",
     "node": ">=24"
@@ -70,70 +71,70 @@
     "commands": [
       {
         "command": "deepseek-pilot.manage",
-        "title": "DeepSeek Pilot: Manage Provider"
+        "title": "%deepseek-pilot.command.manage%"
       },
       {
         "command": "deepseek-pilot.setApiKey",
-        "title": "DeepSeek Pilot: Set API Key"
+        "title": "%deepseek-pilot.command.setApiKey%"
       },
       {
         "command": "deepseek-pilot.getApiKey",
-        "title": "DeepSeek Pilot: Get API Key"
+        "title": "%deepseek-pilot.command.getApiKey%"
       },
       {
         "command": "deepseek-pilot.clearApiKey",
-        "title": "DeepSeek Pilot: Clear API Key"
+        "title": "%deepseek-pilot.command.clearApiKey%"
       },
       {
         "command": "deepseek-pilot.setVisionModel",
-        "title": "DeepSeek Pilot: Set Vision Proxy Model"
+        "title": "%deepseek-pilot.command.setVisionModel%"
       },
       {
         "command": "deepseek-pilot.showLogs",
-        "title": "DeepSeek Pilot: Show Logs"
+        "title": "%deepseek-pilot.command.showLogs%"
       },
       {
         "command": "deepseek-pilot.refreshBalance",
-        "title": "DeepSeek Pilot: Refresh Balance"
+        "title": "%deepseek-pilot.command.refreshBalance%"
       },
       {
         "command": "deepseek-pilot.clearSession",
-        "title": "DeepSeek Pilot: Clear Session Counter"
+        "title": "%deepseek-pilot.command.clearSession%"
       },
       {
         "command": "deepseek-pilot.showCacheStats",
-        "title": "DeepSeek Pilot: Show Reasoning Cache Stats"
+        "title": "%deepseek-pilot.command.showCacheStats%"
       },
       {
         "command": "deepseek-pilot.showContextWindow",
-        "title": "DeepSeek Pilot: Show Context Window Details"
+        "title": "%deepseek-pilot.command.showContextWindow%"
       },
       {
         "command": "deepseek-pilot.setUtilityModel",
-        "title": "DeepSeek Pilot: Use as Copilot Utility Model"
+        "title": "%deepseek-pilot.command.setUtilityModel%"
       },
       {
         "command": "deepseek-pilot.setUtilitySmallModel",
-        "title": "DeepSeek Pilot: Use as Copilot Utility Small Model"
+        "title": "%deepseek-pilot.command.setUtilitySmallModel%"
       },
       {
         "command": "deepseek-pilot.clearReasoningCache",
-        "title": "DeepSeek Pilot: Clear Reasoning Cache"
+        "title": "%deepseek-pilot.command.clearReasoningCache%"
       }
     ],
     "configuration": {
-      "title": "DeepSeek Pilot",
+      "title": "%deepseek-pilot.config.title%",
       "properties": {
         "deepseek-pilot.baseUrl": {
           "type": "string",
           "default": "https://api.deepseek.com",
-          "description": "DeepSeek API base URL."
+          "description": "%deepseek-pilot.config.baseUrl%"
         },
         "deepseek-pilot.maxTokens": {
           "type": "number",
           "default": 0,
           "minimum": 0,
-          "description": "Maximum output tokens per request. 0 = API default (no limit)."
+          "description": "%deepseek-pilot.config.maxTokens%"
         },
         "deepseek-pilot.reasoningEffort": {
           "type": "string",
@@ -142,16 +143,16 @@
             "max"
           ],
           "enumDescriptions": [
-            "Faster responses with shorter reasoning chains.",
-            "Maximum reasoning depth; slower and uses more tokens."
+            "%deepseek-pilot.config.reasoningEffort.high%",
+            "%deepseek-pilot.config.reasoningEffort.max%"
           ],
           "default": "max",
-          "markdownDescription": "Reasoning effort for `(thinking)` model variants. Has no effect on non-thinking variants."
+          "markdownDescription": "%deepseek-pilot.config.reasoningEffort%"
         },
         "deepseek-pilot.debug": {
           "type": "boolean",
           "default": false,
-          "description": "Enable diagnostic debug logging."
+          "description": "%deepseek-pilot.config.debug%"
         },
         "deepseek-pilot.modelIdOverrides": {
           "type": "object",
@@ -159,56 +160,56 @@
             "deepseek-v4-flash": "deepseek-v4-flash",
             "deepseek-v4-pro": "deepseek-v4-pro"
           },
-          "description": "Optional API model ID overrides for DeepSeek-compatible proxy endpoints.",
+          "description": "%deepseek-pilot.config.modelIdOverrides%",
           "additionalProperties": false,
           "properties": {
             "deepseek-v4-flash": {
               "type": "string",
-              "description": "API model ID to use for DeepSeek V4 Flash variants."
+              "description": "%deepseek-pilot.config.modelIdOverrides.flash%"
             },
             "deepseek-v4-pro": {
               "type": "string",
-              "description": "API model ID to use for DeepSeek V4 Pro variants."
+              "description": "%deepseek-pilot.config.modelIdOverrides.pro%"
             }
           }
         },
         "deepseek-pilot.visionModel": {
           "type": "string",
           "default": "",
-          "description": "Model ID for vision proxy (describes images for text-only DeepSeek). Leave empty for auto-detection. Use 'DeepSeek Pilot: Set Vision Proxy Model' to pick from a list."
+          "description": "%deepseek-pilot.config.visionModel%"
         },
         "deepseek-pilot.visionPrompt": {
           "type": "string",
           "editPresentation": "multilineText",
           "default": "Describe the visual contents of this image in detail, including any text, objects, people, or context that would be relevant for understanding it. Focus on factual visual elements.",
-          "description": "Prompt sent to the vision proxy model when describing image attachments."
+          "description": "%deepseek-pilot.config.visionPrompt%"
         },
         "deepseek-pilot.contextWarnThreshold": {
           "type": "number",
           "default": 60,
           "minimum": 10,
           "maximum": 95,
-          "markdownDescription": "Percent of the model's context window at which the context-window status bar item turns yellow (warning). Below this, the indicator stays neutral and advises against compacting — DeepSeek's KV cache makes compaction expensive when there's still room."
+          "markdownDescription": "%deepseek-pilot.config.contextWarnThreshold%"
         },
         "deepseek-pilot.contextCriticalThreshold": {
           "type": "number",
           "default": 80,
           "minimum": 20,
           "maximum": 99,
-          "markdownDescription": "Percent of the model's context window at which the context-window status bar item turns red (critical) and recommends compacting immediately to avoid truncation. Must be greater than `deepseek-pilot.contextWarnThreshold`."
+          "markdownDescription": "%deepseek-pilot.config.contextCriticalThreshold%"
         }
       }
     },
     "walkthroughs": [
       {
         "id": "deepseekPilotGettingStarted",
-        "title": "DeepSeek Pilot — Setup",
-        "description": "Set up your DeepSeek API key and start using V4 models in Copilot Chat with vision + token tracking.",
+        "title": "%deepseek-pilot.walkthrough.title%",
+        "description": "%deepseek-pilot.walkthrough.description%",
         "steps": [
           {
             "id": "setApiKey",
-            "title": "Set your DeepSeek API key",
-            "description": "[Get an API key](https://platform.deepseek.com/api_keys) from platform.deepseek.com.\n[Set API Key](command:deepseek-pilot.setApiKey)",
+            "title": "%deepseek-pilot.walkthrough.step1.title%",
+            "description": "%deepseek-pilot.walkthrough.step1.description%",
             "media": {
               "markdown": "resources/walkthrough/set-api-key.md"
             },
@@ -218,24 +219,24 @@
           },
           {
             "id": "pickModel",
-            "title": "Pick a DeepSeek V4 model",
-            "description": "Open Copilot Chat and select a DeepSeek V4 variant from the model picker. Four variants available: Pro/Flash × thinking/non-thinking. If they are hidden, use Manage Provider from the picker menu.",
+            "title": "%deepseek-pilot.walkthrough.step2.title%",
+            "description": "%deepseek-pilot.walkthrough.step2.description%",
             "media": {
               "markdown": "resources/walkthrough/pick-model.md"
             }
           },
           {
             "id": "tuneReasoningEffort",
-            "title": "Tune reasoning effort (optional)",
-            "description": "Switch between `high` and `max` for `(thinking)` variants. [Open Reasoning Effort Setting](command:workbench.action.openSettings?%22deepseek-pilot.reasoningEffort%22)",
+            "title": "%deepseek-pilot.walkthrough.step3.title%",
+            "description": "%deepseek-pilot.walkthrough.step3.description%",
             "media": {
               "markdown": "resources/walkthrough/tune-effort.md"
             }
           },
           {
             "id": "support",
-            "title": "Support the project (optional)",
-            "description": "MIT and free. If it helps, [star the repo](https://github.com/setsey/deepseek-pilot) or [sponsor on GitHub](https://github.com/sponsors/setsey).",
+            "title": "%deepseek-pilot.walkthrough.step4.title%",
+            "description": "%deepseek-pilot.walkthrough.step4.description%",
             "media": {
               "markdown": "resources/walkthrough/support.md"
             }
