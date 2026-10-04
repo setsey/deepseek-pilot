@@ -358,14 +358,20 @@ export class BalanceTracker {
         '\n\n',
     );
 
-    md.appendMarkdown(`[$(refresh) ${vscode.l10n.t('Clear session')}](command:deepseek-pilot.clearSession)\n\n`);
+    md.appendMarkdown(
+      `[$(refresh) ${vscode.l10n.t('Clear session')}](command:deepseek-pilot.clearSession)\n\n`,
+    );
 
     md.appendMarkdown('---\n\n');
 
     md.appendMarkdown(
       this.balance
-        ? vscode.l10n.t('**Balance** &nbsp; [$(refresh) refresh](command:deepseek-pilot.refreshBalance)') + '\n\n'
-        : vscode.l10n.t('**Balance** &nbsp; [$(refresh) click to fetch](command:deepseek-pilot.refreshBalance)') + '\n\n',
+        ? vscode.l10n.t(
+            '**Balance** &nbsp; [$(refresh) refresh](command:deepseek-pilot.refreshBalance)',
+          ) + '\n\n'
+        : vscode.l10n.t(
+            '**Balance** &nbsp; [$(refresh) click to fetch](command:deepseek-pilot.refreshBalance)',
+          ) + '\n\n',
     );
     if (this.balance) {
       const bsym = currencySymbol(this.balance.currency);

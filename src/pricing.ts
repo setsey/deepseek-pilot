@@ -5,20 +5,23 @@ import vscode from 'vscode';
  * the model-picker hints and the status-bar cost estimate.
  *
  * Sources: https://api-docs.deepseek.com/quick_start/pricing (USD) and its
- * zh-cn counterpart (CNY), both read 2026-09-10 (the V4.1 Flash card).
+ * zh-cn counterpart (CNY), both re-read 2026-10-04 (the V4.1 Flash card).
  *
  * DeepSeek bills on a peak/off-peak schedule. Peak is 01:00-04:00 and
- * 06:00-10:00 UTC **Monday-Friday**; the zh-cn page states the same window as
- * 周一至周五 09:00-12:00 / 14:00-18:00 Beijing time (UTC+8), so the two agree.
- * Weekends and every other weekday hour are off-peak at exactly half the peak
- * rate. Both peak windows sit inside 01:00-10:00 UTC, where the UTC and
- * Beijing calendar days coincide, so a plain UTC day-of-week test is exact.
+ * 06:00-10:00 UTC **Monday-Friday, excluding Chinese public holidays**; the
+ * zh-cn page states the same window as 周一至周五（不含中国法定节假日）
+ * 09:00-12:00 / 14:00-18:00 Beijing time (UTC+8), so the two agree. Weekends,
+ * those holidays, and every other weekday hour are off-peak at exactly half the
+ * peak rate. Both peak windows sit inside 01:00-10:00 UTC, where the UTC and
+ * Beijing calendar days coincide, so plain UTC day-of-week and date tests are
+ * exact.
  *
  * V4.1 Flash (2026-09) cut Flash rates below the V4 card (peak cache-miss
- * $0.44 -> $0.30, output $1.32 -> $1.20). V4 Pro keeps its own rates only
- * until 2026-09-14 04:00 UTC (12:00 Beijing); from then DeepSeek routes
- * `deepseek-v4-pro` requests to V4.1 Flash and bills them at the Flash price,
- * pending a V4.1 Pro release.
+ * $0.44 -> $0.30, output $1.32 -> $1.20). V4 Pro keeps its own model
+ * (DeepSeek-V4-Pro-0813) and its own rates: the Pro-to-Flash routing announced
+ * for 2026-09-14 was withdrawn ("we have decided to continue providing API
+ * services for DeepSeek V4 Pro after September 14, 2026, with the billing
+ * method remaining unchanged" — https://api-docs.deepseek.com/updates).
  */
 
 export type ModelFamily = 'deepseek-v4-pro' | 'deepseek-flash';
@@ -61,14 +64,28 @@ const PEAK_WINDOWS_UTC: readonly (readonly [number, number])[] = [
 ];
 
 /**
- * From 12:00 Beijing (04:00 UTC) on 2026-09-14, `deepseek-v4-pro` requests are
- * routed to V4.1 Flash and billed at the Flash price (pricing-page deprecation
- * note), so Pro's own rate row only applies before this instant.
+ * Chinese public holidays as inclusive Beijing-calendar date ranges, copied
+ * from the State Council's annual schedule (国务院办公厅关于2026年部分节假日安排的通知,
+ * 2025-11-04). DeepSeek bills every hour of these days off-peak. Weekend
+ * make-up workdays (调休) need no entry: the pricing page keeps all weekend
+ * hours off-peak. A year without ranges here falls back to the plain weekday
+ * rule, which over-reports peak on that year's holidays — add the next year's
+ * ranges when the State Council publishes them (usually November).
  */
-const PRO_BILLS_AS_FLASH_FROM_MS = Date.UTC(2026, 8, 14, 4);
+const CN_PUBLIC_HOLIDAYS: readonly (readonly [string, string])[] = [
+  ['2026-01-01', '2026-01-03'], // New Year's Day
+  ['2026-02-15', '2026-02-23'], // Spring Festival
+  ['2026-04-04', '2026-04-06'], // Qingming
+  ['2026-05-01', '2026-05-05'], // Labour Day
+  ['2026-06-19', '2026-06-21'], // Dragon Boat Festival
+  ['2026-09-25', '2026-09-27'], // Mid-Autumn Festival
+  ['2026-10-01', '2026-10-07'], // National Day
+];
 
 /** Peak schedule in prose, for tooltips and settings copy. */
-export const PEAK_WINDOW_DESCRIPTION = vscode.l10n.t('01:00-04:00 and 06:00-10:00 UTC Mon-Fri');
+export const PEAK_WINDOW_DESCRIPTION = vscode.l10n.t(
+  '01:00-04:00 and 06:00-10:00 UTC Mon-Fri, excl. Chinese public holidays',
+);
 
 /** Display name for a rate tier in tooltips and picker hints. */
 export function rateTierLabel(tier: RateTier): string {
@@ -80,7 +97,11 @@ export function getRateTier(at: Date = new Date()): RateTier {
   if (day === 0 || day === 6) return 'off-peak'; // weekends are entirely off-peak
   const hour = at.getUTCHours();
   // Note 04:00-06:00 UTC falls BETWEEN the two peak windows and is off-peak.
-  return PEAK_WINDOWS_UTC.some(([from, to]) => hour >= from && hour < to) ? 'peak' : 'off-peak';
+  if (!PEAK_WINDOWS_UTC.some(([from, to]) => hour >= from && hour < to)) return 'off-peak';
+  // Inside a peak window the UTC date is the Beijing date, so it can be
+  // compared against the holiday ranges directly.
+  const date = at.toISOString().slice(0, 10);
+  return CN_PUBLIC_HOLIDAYS.some(([from, to]) => date >= from && date <= to) ? 'off-peak' : 'peak';
 }
 
 export function getRates(
@@ -88,11 +109,7 @@ export function getRates(
   currency: PricingCurrency = 'USD',
   at: Date = new Date(),
 ): Rates {
-  let family = resolveFamily(model);
-  if (family === 'deepseek-v4-pro' && at.getTime() >= PRO_BILLS_AS_FLASH_FROM_MS) {
-    family = 'deepseek-flash';
-  }
-  const peak = PEAK_RATES[currency][family];
+  const peak = PEAK_RATES[currency][resolveFamily(model)];
   if (getRateTier(at) === 'peak') return peak;
   return {
     cacheHit: peak.cacheHit * OFF_PEAK_FACTOR,

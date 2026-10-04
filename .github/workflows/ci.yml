@@ -1,6 +1,6 @@
 name: CI
 
-# Lint + compile + package on every push and PR to main. This does NOT publish
+# Lint + test + compile + package on every push and PR to main. This does NOT publish
 # to the Marketplace — publishing stays a manual, PAT-gated `npm run publish`
 # the maintainer runs. The packaged .vsix is uploaded as a build artifact so a
 # release candidate can be downloaded and side-loaded for verification.
@@ -28,6 +28,9 @@ jobs:
 
       - name: Lint
         run: npm run lint
+
+      - name: Test
+        run: npm test
 
       - name: Compile
         run: npm run compile

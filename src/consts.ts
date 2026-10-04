@@ -59,16 +59,14 @@ export const MODELS = [
     thinking: false,
     nativeVision: true,
   },
-  // V4 Pro stays selectable because DeepSeek keeps the `deepseek-v4-pro` id
-  // alive: from 2026-09-14 04:00 UTC requests to it are served by V4.1 Flash
-  // and billed at the Flash price, and the id is the upgrade path if a V4.1
-  // Pro ships behind it. Vision stays off — the Pro API rejects image parts,
-  // so images ride the describe-and-replace proxy here.
+  // V4 Pro (DeepSeek-V4-Pro-0813) remains its own model at its own price:
+  // DeepSeek withdrew the Pro-to-Flash routing it had announced for
+  // 2026-09-14. Vision stays off — the Pro API rejects image parts, so images
+  // ride the describe-and-replace proxy here.
   {
     id: 'deepseek-v4-pro::thinking',
     name: 'DeepSeek V4 Pro (thinking)',
-    description:
-      'DeepSeek V4 Pro — extended thinking, 1M context; served by V4.1 Flash from 2026-09-14',
+    description: 'DeepSeek V4 Pro — extended thinking, 1M context; images via the vision proxy',
     detailPrefix: 'Pro · thinking',
     vendor: 'deepseek-pilot',
     family: 'deepseek-v4-pro',
@@ -81,8 +79,7 @@ export const MODELS = [
   {
     id: 'deepseek-v4-pro',
     name: 'DeepSeek V4 Pro',
-    description:
-      'DeepSeek V4 Pro — no extended thinking, 1M context; served by V4.1 Flash from 2026-09-14',
+    description: 'DeepSeek V4 Pro — no extended thinking, 1M context; images via the vision proxy',
     detailPrefix: 'Pro · fast',
     vendor: 'deepseek-pilot',
     family: 'deepseek-v4-pro',
@@ -103,12 +100,14 @@ export const MODELS = [
 export const NATIVE_VISION_MODEL_ID = 'deepseek-flash';
 
 /**
- * DeepSeek converts an image to at most this many tokens (dimension-based,
- * capped; larger images are resized to ~800x800 server-side). Used for
- * token estimation on native-vision variants and for the cost of an image
- * in the converted-request character count.
+ * DeepSeek converts an image to at most this many tokens: every image is
+ * resized before inference (small ones up toward ~544x544, large ones down to
+ * roughly 1300x1300 total pixels), which bounds the cost per image —
+ * https://api-docs.deepseek.com/guides/vision ("Token Usage"). Used for token
+ * estimation on native-vision variants and for the cost of an image in the
+ * converted-request character count.
  */
-export const VISION_IMAGE_TOKEN_CAP = 384;
+export const VISION_IMAGE_TOKEN_CAP = 1024;
 
 /**
  * Per-image raw-byte guard for native vision. DeepSeek caps base64 images at

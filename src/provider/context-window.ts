@@ -68,8 +68,7 @@ export class ContextWindowTracker {
   recordTurn(modelInfo: vscode.LanguageModelChatInformation, usage: DSUsage): void {
     const promptTokens = usage.prompt_tokens ?? 0;
     const cacheHit = usage.prompt_cache_hit_tokens ?? 0;
-    const cacheMiss =
-      usage.prompt_cache_miss_tokens ?? Math.max(0, promptTokens - cacheHit);
+    const cacheMiss = usage.prompt_cache_miss_tokens ?? Math.max(0, promptTokens - cacheHit);
     const completion = usage.completion_tokens ?? 0;
 
     this.lastTurn = {
@@ -112,10 +111,8 @@ export class ContextWindowTracker {
       };
     }
 
-    const pctUsed =
-      turn.maxInputTokens > 0 ? (turn.promptTokens / turn.maxInputTokens) * 100 : 0;
-    const cacheHitPct =
-      turn.promptTokens > 0 ? (turn.cacheHitTokens / turn.promptTokens) * 100 : 0;
+    const pctUsed = turn.maxInputTokens > 0 ? (turn.promptTokens / turn.maxInputTokens) * 100 : 0;
+    const cacheHitPct = turn.promptTokens > 0 ? (turn.cacheHitTokens / turn.promptTokens) * 100 : 0;
     const { warn, crit } = this.getThresholds();
 
     if (pctUsed >= crit) {
@@ -124,10 +121,7 @@ export class ContextWindowTracker {
         turn,
         pctUsed,
         cacheHitPct,
-        headline: vscode.l10n.t(
-          'Critical — {0}% of context window used',
-          pctUsed.toFixed(0),
-        ),
+        headline: vscode.l10n.t('Critical — {0}% of context window used', pctUsed.toFixed(0)),
         advice: vscode.l10n.t(
           "Compact or start a new chat **now**. You're close to the hard limit; the next long turn risks truncation. The KV-cache penalty from compacting is worth it at this saturation.",
         ),

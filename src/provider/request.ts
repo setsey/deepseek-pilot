@@ -89,12 +89,21 @@ export async function prepareChatRequest(params: {
   // it. When we detect one — and only against the official endpoint, since a
   // proxy may map models differently — force thinking off to save reasoning
   // tokens and latency. See request-kind.ts.
+  //
+  // A request that forces a tool call (LanguageModelChatToolMode.Required)
+  // also runs with thinking off: DeepSeek rejects `required` and named
+  // tool_choice in thinking mode with a 400 (`tool_choice` in
+  // api-docs.deepseek.com/api/create-chat-completion), and honouring the
+  // host's forced call matters more than reasoning on that one request.
   const variantThinking = variant.version === 'thinking';
   const hasTools = !!(options.tools && options.tools.length > 0);
-  const thinking =
-    variantThinking &&
-    !(getOptimizeUtilityRequests() && isOfficialBaseUrl() && isUtilityRequest(messages, hasTools));
-  if (variantThinking && !thinking) {
+  const forcesToolCall = hasTools && options.toolMode === vscode.LanguageModelChatToolMode.Required;
+  const utilityFlow =
+    getOptimizeUtilityRequests() && isOfficialBaseUrl() && isUtilityRequest(messages, hasTools);
+  const thinking = variantThinking && !forcesToolCall && !utilityFlow;
+  if (variantThinking && forcesToolCall) {
+    logger.info('[req] host requires a tool call — forcing thinking off (required tool_choice)');
+  } else if (variantThinking && utilityFlow) {
     logger.info('[req] utility flow detected — forcing thinking off to save reasoning tokens');
   }
 
@@ -142,10 +151,11 @@ export async function prepareChatRequest(params: {
       });
 
     toolChoice = 'auto';
-    if (options.toolMode === vscode.LanguageModelChatToolMode.Required) {
-      // DeepSeek supports the OpenAI-standard tool_choice. Force a specific tool
-      // when there's exactly one; otherwise use the generic "required" literal
-      // (the model must call some tool) — previously we threw for >1 tool.
+    if (forcesToolCall) {
+      // DeepSeek supports the OpenAI-standard tool_choice (in non-thinking
+      // mode — `thinking` is already off here). Force a specific tool when
+      // there's exactly one; otherwise use the generic "required" literal (the
+      // model must call some tool).
       toolChoice =
         tools.length === 1
           ? { type: 'function', function: { name: tools[0]!.function.name } }

@@ -21,9 +21,12 @@ interface ToolCallBuffer {
  * Verified against Copilot Chat 0.58.0 (bundled with VS Code 1.130): the `usage`
  * data part is normalized as
  * `cached_tokens: Math.max(0, prompt_tokens_details?.cached_tokens ?? 0)`.
- * DeepSeek never sends `prompt_tokens_details`, so passing its usage object
- * through verbatim pins the host's cached-token readout at 0 even on a full
- * cache hit. `prompt_cache_hit_tokens` carries the same number, so map it.
+ * DeepSeek originally sent no `prompt_tokens_details`, so passing its usage
+ * object through verbatim pinned the host's cached-token readout at 0 even on
+ * a full cache hit. `prompt_cache_hit_tokens` carries the same number, so map
+ * it. The current API reference documents `prompt_tokens_details.cached_tokens`
+ * natively ("Same as prompt_cache_hit_tokens"); when present it passes through
+ * untouched.
  *
  * The DeepSeek-native fields are left in place — the host ignores what it
  * doesn't recognise, and `BalanceTracker` reads the raw object separately.
@@ -257,6 +260,11 @@ export async function streamChatCompletion(params: {
             logger.warn(`length truncation finish=${finishReason}`);
           } else if (finishReason === 'content_filter') {
             logger.warn(`content filter finish=${finishReason}`);
+          } else if (finishReason === 'aborted') {
+            // DeepSeek reports a generation interrupted server-side this way.
+            logger.warn(
+              `generation aborted finish=${finishReason} reasoningLen=${fullReasoning.length} contentLen=${fullContent.length}`,
+            );
           }
 
           const isClean = finishReason === 'tool_calls' || finishReason === 'stop';

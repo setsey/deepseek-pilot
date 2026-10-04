@@ -2,6 +2,28 @@
 
 All notable changes to **DeepSeek Pilot** are recorded here. Format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/); versions follow [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.9.0] — 2026-10-04
+
+Re-verification pass against DeepSeek's live API ([pricing](https://api-docs.deepseek.com/quick_start/pricing), its [zh-cn counterpart](https://api-docs.deepseek.com/zh-cn/quick_start/pricing), the [change log](https://api-docs.deepseek.com/updates), the [API reference](https://api-docs.deepseek.com/api/create-chat-completion), and the [vision](https://api-docs.deepseek.com/guides/vision) and [thinking-mode](https://api-docs.deepseek.com/guides/thinking_mode) guides, all read 2026-10-04) and the current host (VS Code 1.140). The headline: DeepSeek **withdrew** the V4 Pro to V4.1 Flash routing it had announced for 2026-09-14 and kept serving Pro "with the billing method remaining unchanged". v0.8.0 had already date-gated that switch, so since 2026-09-14 it has been estimating Pro requests at Flash prices. This release also completes the Chinese interface, contributed by [@XiaoZ-0218](https://github.com/XiaoZ-0218) ([#2](https://github.com/setsey/deepseek-pilot/pull/2)).
+
+### Fixed
+- **DeepSeek V4 Pro cost estimates were 3.3x to 7.3x too low from 2026-09-14.** The status bar, picker hint, and native cost slots billed Pro at the Flash card ($0.30 / $1.20 per Mtok cache-miss / output at peak) instead of Pro's own ($1.32 / $3.96; cache-hit $0.044 vs $0.006). The cutover gate is removed and Pro always bills its own row, in USD and CNY.
+- **Thinking variants no longer 400 when the host forces a tool call.** DeepSeek rejects `tool_choice: "required"` and named-tool choices in thinking mode. When the host passes `LanguageModelChatToolMode.Required` (for example Copilot's prompt categorizer, if a thinking variant serves it), the request is now sent with thinking off; ordinary agent turns, which use `tool_choice: "auto"`, keep thinking on. The log line `[req] host requires a tool call` marks it.
+- **Chinese public holidays bill off-peak, and now show as off-peak.** The pricing page excludes them from peak hours (周一至周五（不含中国法定节假日）). The 2026 State Council schedule is built in, so this week's National Day holiday (Oct 5-7) and every other 2026 holiday weekday report the off-peak tier and rate. Weekend make-up workdays stay off-peak, as the page bills every weekend hour off-peak.
+- **Image token estimates on the V4.1 Flash variants.** DeepSeek now bounds each image at 1,024 tokens (images are resized to roughly 1300x1300 total pixels before inference), up from the 384 the estimator assumed, so the context-window indicator and prompt budgeting under-counted image-heavy chats.
+
+### Changed
+- The V4 Pro picker descriptions drop "served by V4.1 Flash from 2026-09-14" and now say images go through the vision proxy.
+- The peak schedule in the status-bar and picker tooltips reads "Mon-Fri, excl. Chinese public holidays".
+- The README documents VS Code's `chat.byokUtilityModelDefault` setting, which decides where Copilot's utility flows run while a DeepSeek model is active and neither utility slot is set: Copilot's own models (the default), the active DeepSeek model, or nowhere.
+- A `finish_reason` of `aborted` (a generation DeepSeek interrupted server-side) is now logged alongside the other truncation reasons.
+- CI now runs the test suite on every push and pull request; it previously ran lint, compile, and package only.
+- Host contracts re-verified against VS Code 1.140: the language-model section of the stable API is unchanged since 1.137, the `usage` MIME and `cached_tokens` contract still hold (DeepSeek now documents `prompt_tokens_details.cached_tokens` natively and it passes through untouched), the utility-request markers still match Copilot's current prompts, and `languageModelThinkingPart` is still a proposed API.
+
+### Added
+- **Chinese (zh-cn) translations for the rest of the interface** — the status-bar tooltip, the model-picker tooltip and rate hint, the context-window headlines and advice, the KV-cache primer, the compaction-details dialog, the thinking-effort control, and the utility-model quick pick. English output is unchanged. Contributed by [@XiaoZ-0218](https://github.com/XiaoZ-0218) ([#2](https://github.com/setsey/deepseek-pilot/pull/2)).
+- Specs for the holiday tier, Pro billing after 2026-09-14, and the forced-tool-call thinking rule. The suite is now 88.
+
 ## [0.8.0] — 2026-09-10
 
 Re-verification pass against DeepSeek's live API ([pricing](https://api-docs.deepseek.com/quick_start/pricing), its [zh-cn counterpart](https://api-docs.deepseek.com/zh-cn/quick_start/pricing), and the [API reference](https://api-docs.deepseek.com/api/create-chat-completion), all read 2026-09-10) and the current host (VS Code 1.137.0 with Copilot Chat 0.65.0). DeepSeek shipped **V4.1 Flash** as its new flagship under the model id `deepseek-flash`: it is natively multimodal (absorbing the experimental `deepseek-v4-flash-vision-exp`), cheaper than V4 Flash, and replaces V4 Pro too — from **2026-09-14 04:00 UTC** DeepSeek serves `deepseek-v4-pro` requests with V4.1 Flash and bills them at the Flash price. The legacy `deepseek-v4-flash` / `deepseek-v4-flash-vision-exp` ids remain accepted but are routed the same way. Peak billing hours also became weekday-only.

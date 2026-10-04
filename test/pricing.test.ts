@@ -7,10 +7,7 @@ import {
   resolveFamily,
 } from '../src/pricing';
 
-/**
- * Fixed instants so nothing depends on "now". 2026-08-17 is a Monday, before
- * the 2026-09-14 Pro->Flash billing cutover, so Pro's own rates apply.
- */
+/** Fixed instants so nothing depends on "now". 2026-08-17 is a Monday. */
 const OFF_PEAK = new Date('2026-08-17T12:00:00Z');
 const PEAK = new Date('2026-08-17T02:00:00Z');
 
@@ -44,6 +41,37 @@ describe('getRateTier', () => {
     expect(getRateTier(new Date('2026-09-14T02:00:00Z'))).toBe('peak'); // Monday
   });
 
+  // State Council 2026 schedule; the pricing page bills these days off-peak.
+  it('treats Chinese public holiday weekdays as off-peak inside the peak windows', () => {
+    expect(getRateTier(new Date('2026-10-05T02:00:00Z'))).toBe('off-peak'); // Mon, National Day
+    expect(getRateTier(new Date('2026-10-07T09:59:59Z'))).toBe('off-peak'); // Wed, its last day
+    expect(getRateTier(new Date('2026-01-01T01:00:00Z'))).toBe('off-peak'); // Thu, New Year
+    expect(getRateTier(new Date('2026-02-16T07:00:00Z'))).toBe('off-peak'); // Mon, Spring Festival
+    expect(getRateTier(new Date('2026-02-23T07:00:00Z'))).toBe('off-peak'); // Mon, its last day
+    expect(getRateTier(new Date('2026-09-25T03:00:00Z'))).toBe('off-peak'); // Fri, Mid-Autumn
+  });
+
+  it('peaks again on the first working weekday after a holiday', () => {
+    expect(getRateTier(new Date('2026-10-08T01:00:00Z'))).toBe('peak'); // Thu
+    expect(getRateTier(new Date('2026-02-24T07:00:00Z'))).toBe('peak'); // Tue
+    expect(getRateTier(new Date('2026-12-31T02:00:00Z'))).toBe('peak'); // Thu before New Year
+  });
+
+  it('keeps weekend make-up workdays off-peak', () => {
+    // 2026-10-10 (Sat) and 2026-09-20 (Sun) are 调休 working days, but the
+    // pricing page bills every weekend hour off-peak.
+    expect(getRateTier(new Date('2026-10-10T02:00:00Z'))).toBe('off-peak');
+    expect(getRateTier(new Date('2026-09-20T07:00:00Z'))).toBe('off-peak');
+  });
+
+  it('bills a holiday peak hour at the off-peak rate', () => {
+    expect(getRates('deepseek-v4-pro', 'USD', new Date('2026-10-06T02:00:00Z'))).toEqual({
+      cacheHit: 0.022,
+      cacheMiss: 0.66,
+      output: 1.98,
+    });
+  });
+
   it('switches exactly on the hour boundaries', () => {
     expect(getRateTier(new Date('2026-08-17T00:59:59Z'))).toBe('off-peak');
     expect(getRateTier(new Date('2026-08-17T01:00:00Z'))).toBe('peak');
@@ -56,7 +84,7 @@ describe('getRateTier', () => {
 
 describe('getRates', () => {
   // Cell-for-cell against https://api-docs.deepseek.com/quick_start/pricing
-  // (the V4.1 Flash card, read 2026-09-10).
+  // (the V4.1 Flash card, re-read 2026-10-04).
   it('matches the published USD peak column', () => {
     expect(getRates('deepseek-v4-pro', 'USD', PEAK)).toEqual({
       cacheHit: 0.044,
@@ -111,7 +139,7 @@ describe('getRates', () => {
     });
   });
 
-  it('prices Pro above Flash in every column (before the routing cutover)', () => {
+  it('prices Pro above Flash in every column', () => {
     for (const at of [PEAK, OFF_PEAK]) {
       const pro = getRates('deepseek-v4-pro', 'USD', at);
       const flash = getRates('deepseek-flash', 'USD', at);
@@ -121,25 +149,26 @@ describe('getRates', () => {
     }
   });
 
-  it('bills Pro at the Flash price from 2026-09-14 04:00 UTC (12:00 Beijing)', () => {
-    // 03:59 UTC Monday is still inside a peak window: Pro's own peak rates.
-    const justBefore = new Date('2026-09-14T03:59:59Z');
-    expect(getRates('deepseek-v4-pro', 'USD', justBefore)).toEqual({
+  it('keeps billing Pro at Pro rates after 2026-09-14 (the announced Flash routing was withdrawn)', () => {
+    // DeepSeek kept V4 Pro "with the billing method remaining unchanged"
+    // (api-docs.deepseek.com/updates), so the old 04:00 UTC cutover instant and
+    // every later peak hour still bill Pro's own row.
+    const formerCutover = new Date('2026-09-14T04:00:00Z');
+    expect(getRates('deepseek-v4-pro', 'USD', formerCutover)).toEqual({
+      cacheHit: 0.022,
+      cacheMiss: 0.66,
+      output: 1.98,
+    });
+    const laterPeak = new Date('2026-09-15T07:00:00Z');
+    expect(getRates('deepseek-v4-pro', 'USD', laterPeak)).toEqual({
       cacheHit: 0.044,
       cacheMiss: 1.32,
       output: 3.96,
     });
-    // From the cutover instant, Pro requests are routed to V4.1 Flash and
-    // billed at Flash rates; 04:00 UTC sits in the off-peak gap.
-    const atCutover = new Date('2026-09-14T04:00:00Z');
-    expect(getRates('deepseek-v4-pro', 'USD', atCutover)).toEqual(
-      getRates('deepseek-flash', 'USD', atCutover),
-    );
-    const laterPeak = new Date('2026-09-15T07:00:00Z');
-    expect(getRates('deepseek-v4-pro', 'USD', laterPeak)).toEqual({
-      cacheHit: 0.006,
-      cacheMiss: 0.3,
-      output: 1.2,
+    expect(getRates('deepseek-v4-pro', 'CNY', laterPeak)).toEqual({
+      cacheHit: 0.3,
+      cacheMiss: 9,
+      output: 27,
     });
   });
 });

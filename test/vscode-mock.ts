@@ -42,6 +42,9 @@ export class LanguageModelToolResultPart {
 
 export const LanguageModelChatMessageRole = { User: 1, Assistant: 2 } as const;
 
+// request.ts maps the host's tool mode onto DeepSeek's tool_choice.
+export const LanguageModelChatToolMode = { Auto: 1, Required: 2 } as const;
+
 // logger.ts constructs its output channel at module scope, so importing any
 // module that reaches it (stream.ts does) needs `window` to exist.
 export const window = {
@@ -78,6 +81,7 @@ export default {
   LanguageModelToolResultPart,
   LanguageModelToolResult,
   LanguageModelChatMessageRole,
+  LanguageModelChatToolMode,
   CancellationError,
   window,
   workspace,
